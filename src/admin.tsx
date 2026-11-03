@@ -1,22 +1,36 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { BarChart3, ChevronRight, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar } from 'lucide-react';
+import { BarChart3, ChevronRight, Star, Layers, Type, Scale, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { deleteCategory, deleteSeason, fetchAdminProducts, fetchAdminStats, fetchCategories, fetchSeasons, saveCategory, saveSeason, fetchHeroSlides, saveHeroSlide, deleteHeroSlide, type HeroSlideRow, fetchAdminEvents, saveEvent, deleteEvent, type EventRow } from '@/lib/catalogService';
 import { fetchSiteImages, saveSiteImage, type SiteImageKey } from '@/lib/siteImages';
-import { deleteMedia, deleteProduct, fetchMedia, fetchRequests, fetchSiteContents, saveProduct, saveSiteContent, updateRequest, uploadImage, type MediaItem, type ProductInput } from '@/lib/adminService';
+import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
+import { ProductGalleryEditor } from '@/adminPages';
 import { supabase } from '@/lib/supabase';
-import { productImageAlt } from '@/lib/seo';
+import { metaDescription, slugify, thumbUrl } from '@/lib/seo';
 import { saveLegalDocument, saveLegalSettings, type LegalDocument } from '@/lib/legalService';
 import ImageUploader from '@/components/ImageUploader';
+import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
 
-type AdminProductRow = { id: string; name: string; price: number | null; published: boolean; categories?: { name: string } | null; product_images?: { public_url: string }[] };
+type AdminProductRow = { id: string; name: string; slug: string; price: number | null; published: boolean; featured: boolean; categories?: { name: string } | null; product_images?: { public_url: string; is_main: boolean; display_order: number }[] };
 type AdminRequestRow = { id: string; status: string; request_type: string; product_name?: string | null; first_name: string; last_name: string; email: string; phone?: string | null; subject: string; message: string; occasion?: string | null; desired_colors?: string | null; desired_dimensions?: string | null; budget?: string | null; desired_date?: string | null; admin_notes?: string | null; created_at: string };
-type ContentRow = { id: string; page: string; section: string; content_key: string; content_type: string; value: unknown; updated_at: string };
-type ContentDraft = Omit<ContentRow, 'id' | 'updated_at'> & { id?: string };
 type SimpleRow = { id: string; name: string; slug: string; description?: string; display_order?: number; published?: boolean; color?: string; icon?: string };
 
-const nav = [{ path: '/admin', label: 'Tableau de bord', icon: LayoutDashboard }, { path: '/admin/creations', label: 'Créations', icon: Package }, { path: '/admin/categories', label: 'Catégories', icon: Tags }, { path: '/admin/saisons', label: 'Saisons', icon: BarChart3 }, { path: '/admin/hero', label: 'Bannière', icon: ImagePlus }, { path: '/admin/evenements', label: 'Événements', icon: Calendar }, { path: '/admin/images', label: 'Images du site', icon: ImagePlus }, { path: '/admin/contenus', label: 'Contenus', icon: FileText }, { path: '/admin/medias', label: 'Médiathèque', icon: ImagePlus }, { path: '/admin/demandes', label: 'Demandes', icon: Inbox }, { path: '/admin/parametres', label: 'Paramètres', icon: Settings }];
+const nav = [
+  { path: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
+  { path: '/admin/demandes', label: 'Demandes', icon: Inbox },
+  { path: '/admin/creations', label: 'Créations', icon: Package },
+  { path: '/admin/categories', label: 'Catégories', icon: Tags },
+  { path: '/admin/saisons', label: 'Saisons', icon: BarChart3 },
+  { path: '/admin/matieres', label: 'Matières', icon: Layers },
+  { path: '/admin/hero', label: 'Bannière d’accueil', icon: ImagePlus },
+  { path: '/admin/evenements', label: 'Événements et boutiques', icon: Calendar },
+  { path: '/admin/images', label: 'Images du site', icon: ImagePlus },
+  { path: '/admin/contenus', label: 'Textes du site', icon: Type },
+  { path: '/admin/medias', label: 'Médiathèque', icon: FileText },
+  { path: '/admin/legal', label: 'Pages légales', icon: Scale },
+  { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
+];
 
 export function ProtectedRoute() { const { session, profile, loading } = useAuth(); if (loading) return <AdminLoading />; if (!session || !profile) return <Navigate to="/admin/login" replace />; return <Outlet />; }
 export function AdminLogin() { const { session, signIn, resetPassword } = useAuth(); const location = useLocation(); const [email, setEmail] = useState(''); const [password, setPassword] = useState(''); const [forgot, setForgot] = useState(false); const [message, setMessage] = useState(''); const [error, setError] = useState(''); if (session && new URLSearchParams(location.search).get('reset') === '1') return <AdminSetPassword />; if (session) return <Navigate to="/admin" replace />; async function submit(e: FormEvent) { e.preventDefault(); setError(''); setMessage(''); const result = forgot ? await resetPassword(email) : await signIn(email, password); if (result.error) setError(result.error); else setMessage(forgot ? 'Si cette adresse est autorisée, un lien vient d’être envoyé.' : 'Connexion réussie.'); } return <div className="min-h-screen bg-cream flex items-center justify-center p-4"><div className="w-full max-w-md bg-off-white rounded-soft shadow-card p-8"><img src="/logo-atelier-isabelle.png" alt="L’Atelier d’Isabelle" className="h-20 w-auto mx-auto object-contain mb-6" /><h1 className="text-2xl text-center font-medium">{forgot ? 'Mot de passe oublié' : 'Administration privée'}</h1><p className="text-center text-sm text-wood-deep/60 mt-2">{forgot ? 'Recevez un lien sécurisé pour choisir un nouveau mot de passe.' : 'Connectez-vous pour gérer votre atelier.'}</p><form onSubmit={submit} className="mt-8 space-y-4"><label className="block"><span className="label-field">Adresse e-mail</span><input className="input-field" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>{!forgot && <label className="block"><span className="label-field">Mot de passe</span><input className="input-field" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} /></label>}{error && <p className="text-sm text-red-700" role="alert">{error}</p>}{message && <p className="text-sm text-sage" role="status">{message}</p>}<button className="btn-primary w-full">{forgot ? 'Envoyer le lien' : 'Se connecter'}</button></form><button className="block mx-auto mt-5 text-sm text-terracotta hover:underline" onClick={() => { setForgot(!forgot); setError(''); }}>{forgot ? 'Retour à la connexion' : 'Mot de passe oublié ?'}</button><Link className="block text-center mt-5 text-sm text-wood-deep/60 hover:text-terracotta" to="/">Retourner au site</Link></div></div>; }
@@ -27,33 +41,81 @@ function AdminSetPassword() { const { updatePassword } = useAuth(); const naviga
 export function AdminLayout() { const { profile, signOut } = useAuth(); const location = useLocation(); const [open, setOpen] = useState(false); return <div className="min-h-screen bg-cream"><aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-wood-deep text-cream transform transition-transform lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}><div className="h-full flex flex-col p-5"><div className="flex items-center justify-between mb-8"><img src="/logo-atelier-isabelle.png" alt="L’Atelier d’Isabelle" className="h-16 w-auto object-contain brightness-0 invert" /><button className="lg:hidden" onClick={() => setOpen(false)} aria-label="Fermer"><X /></button></div><p className="text-xs uppercase tracking-wider text-beige mb-3">Espace privé</p><nav className="space-y-1 flex-1">{nav.map(({ path, label, icon: Icon }) => <Link key={path} to={path} onClick={() => setOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-soft text-sm transition-colors ${location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path)) ? 'bg-terracotta text-off-white' : 'text-cream/75 hover:bg-cream/10 hover:text-cream'}`}><Icon className="h-4 w-4" />{label}</Link>)}</nav><div className="border-t border-cream/10 pt-4"><p className="text-sm text-cream/80 truncate">{profile?.full_name || profile?.email}</p><p className="text-xs text-cream/50 mt-1 capitalize">{profile?.role}</p><Link to="/admin/login?reset=1" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta mt-4"><Settings className="h-4 w-4" />Changer mon mot de passe</Link><button onClick={() => void signOut()} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta mt-4"><LogOut className="h-4 w-4" />Déconnexion</button></div></div></aside><div className="lg:pl-72"><header className="h-16 bg-off-white border-b border-wood-deep/10 flex items-center px-4 sm:px-8 sticky top-0 z-40"><button className="lg:hidden mr-4" onClick={() => setOpen(true)} aria-label="Ouvrir le menu"><Menu /></button><Link to="/" className="text-sm text-wood-deep/60 hover:text-terracotta">Voir le site</Link></header><main className="p-4 sm:p-8 max-w-7xl mx-auto"><Outlet /></main></div></div>; }
 
 function AdminLoading() { return <div className="min-h-screen bg-cream flex items-center justify-center text-wood-deep/60">Chargement de votre espace…</div>; }
-function AdminTitle({ title, description, action }: { title: string; description?: string; action?: ReactNode }) { return <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8"><div><p className="text-xs uppercase tracking-wider text-terracotta mb-2">L’atelier</p><h1 className="text-3xl sm:text-4xl font-medium">{title}</h1>{description && <p className="mt-2 text-wood-deep/60">{description}</p>}</div>{action}</div>; }
 
-export function AdminDashboard() { const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, unavailable: 0, requests: 0 }); const [error, setError] = useState(''); useEffect(() => { fetchAdminStats().then(setStats).catch(() => setError('Les statistiques ne sont pas disponibles pour le moment.')); }, []); const cards = [['Créations', stats.total, 'total'], ['Publiées', stats.published, 'en ligne'], ['Brouillons', stats.drafts, 'à finaliser'], ['Indisponibles', stats.unavailable, 'vendues ou masquées'], ['Nouvelles demandes', stats.requests, 'à traiter']]; return <><AdminTitle title="Tableau de bord" description="Retrouvez l’essentiel de votre atelier en un coup d'œil." action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Ajouter une création</Link>} />{error && <Notice text={error} error />}{!error && <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">{cards.map(([label, value, hint]) => <div key={String(label)} className="bg-off-white rounded-soft p-5 shadow-soft"><p className="text-sm text-wood-deep/60">{label}</p><p className="text-3xl font-medium mt-2">{value}</p><p className="text-xs text-sage mt-1">{hint}</p></div>)}</div>}<div className="mt-10 grid lg:grid-cols-2 gap-6"><div className="bg-off-white rounded-soft p-6"><h2 className="text-xl font-medium mb-4">Accès rapides</h2><div className="grid sm:grid-cols-2 gap-3"><Link to="/admin/creations/nouvelle" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Plus className="h-5 w-5 text-terracotta mb-2" />Nouvelle création</Link><Link to="/admin/demandes" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Inbox className="h-5 w-5 text-terracotta mb-2" />Voir les demandes</Link></div></div><div className="bg-beige/35 rounded-soft p-6"><h2 className="text-xl font-medium mb-3">Un espace simple à faire vivre</h2><p className="text-sm text-wood-deep/70 leading-relaxed">Ajoutez vos nouvelles créations, mettez à jour leurs disponibilités et retrouvez les messages reçus depuis votre site.</p></div></div></>; }
+export function AdminDashboard() { const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, unavailable: 0, requests: 0 }); const [recent, setRecent] = useState<AdminRequestRow[]>([]); const [error, setError] = useState(''); useEffect(() => { fetchAdminStats().then(setStats).catch(() => setError('Les statistiques ne sont pas disponibles pour le moment.')); fetchRequests().then((rows) => setRecent((rows as AdminRequestRow[]).slice(0, 5))).catch(() => {}); }, []); const cards = [['Créations', stats.total, 'total'], ['Publiées', stats.published, 'en ligne'], ['Brouillons', stats.drafts, 'à finaliser'], ['Indisponibles', stats.unavailable, 'vendues ou masquées'], ['Nouvelles demandes', stats.requests, 'à traiter']]; return <><AdminTitle title="Tableau de bord" description="Retrouvez l’essentiel de votre atelier en un coup d'œil." action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Ajouter une création</Link>} />{error && <Notice text={error} error />}{!error && <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">{cards.map(([label, value, hint]) => <div key={String(label)} className="bg-off-white rounded-soft p-5 shadow-soft"><p className="text-sm text-wood-deep/60">{label}</p><p className="text-3xl font-medium mt-2">{value}</p><p className="text-xs text-sage mt-1">{hint}</p></div>)}</div>}<div className="mt-10 grid lg:grid-cols-2 gap-6"><div className="bg-off-white rounded-soft p-6"><h2 className="text-xl font-medium mb-4">Accès rapides</h2><div className="grid sm:grid-cols-2 gap-3"><Link to="/admin/creations/nouvelle" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Plus className="h-5 w-5 text-terracotta mb-2" />Nouvelle création</Link><Link to="/admin/demandes" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Inbox className="h-5 w-5 text-terracotta mb-2" />Voir les demandes</Link><Link to="/admin/contenus" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Type className="h-5 w-5 text-terracotta mb-2" />Modifier les textes du site</Link><Link to="/admin/images" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><ImagePlus className="h-5 w-5 text-terracotta mb-2" />Changer les images du site</Link></div></div><div className="bg-off-white rounded-soft p-6"><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-medium">Dernières demandes</h2><Link to="/admin/demandes" className="text-sm text-terracotta hover:underline">Tout voir</Link></div>{recent.length === 0 ? <p className="text-sm text-wood-deep/60">Aucune demande pour le moment.</p> : <ul className="divide-y divide-wood-deep/10">{recent.map((item) => <li key={item.id} className="py-3 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-sm font-medium truncate">{item.first_name} {item.last_name} — {item.subject}</p><p className="text-xs text-wood-deep/50">{new Date(item.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p></div>{item.status === 'new' && <span className="badge-terracotta shrink-0">Nouvelle</span>}</li>)}</ul>}</div></div></>; }
 
-export function AdminProducts() { const [products, setProducts] = useState<AdminProductRow[]>([]); const [query, setQuery] = useState(''); const [error, setError] = useState(''); const load = () => fetchAdminProducts().then(setProducts).catch(() => setError('Impossible de charger les créations.')); useEffect(() => { void load(); }, []); const filtered = useMemo(() => products.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())), [products, query]); async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } } return <><AdminTitle title="Créations" description="Gérez les pièces présentées sur votre site." action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Nouvelle création</Link>} />{error && <Notice text={error} error />}<div className="bg-off-white rounded-soft p-4 mb-5"><input className="input-field max-w-md" placeholder="Rechercher une création…" value={query} onChange={(e) => setQuery(e.target.value)} /></div><div className="bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-beige/30"><tr><th className="text-left p-4">Création</th><th className="text-left p-4">Prix</th><th className="text-left p-4">Statut</th><th className="text-right p-4">Actions</th></tr></thead><tbody>{filtered.map((p) => <tr key={p.id} className="border-t border-wood-deep/10"><td className="p-4"><div className="flex items-center gap-3">{p.product_images?.[0] && <img src={p.product_images[0].public_url} alt="" className="h-12 w-12 rounded object-cover" />}<div><p className="font-medium">{p.name}</p><p className="text-xs text-wood-deep/50">{p.categories?.name || 'Sans catégorie'}</p></div></div></td><td className="p-4">{p.price ? `${p.price} €` : 'Sur demande'}</td><td className="p-4"><span className={p.published ? 'badge-sage' : 'badge-wood'}>{p.published ? 'Publié' : 'Brouillon'}</span></td><td className="p-4"><div className="flex justify-end gap-2"><Link className="p-2 text-wood-deep/60 hover:text-terracotta" to={`/admin/creations/${p.id}`} aria-label={`Modifier ${p.name}`}><Pencil className="h-4 w-4" /></Link><button className="p-2 text-wood-deep/60 hover:text-red-700" onClick={() => void remove(p.id)} aria-label={`Supprimer ${p.name}`}><Trash2 className="h-4 w-4" /></button></div></td></tr>)}</tbody></table>{filtered.length === 0 && <p className="p-8 text-center text-wood-deep/60">Aucune création trouvée.</p>}</div></div></>; }
+export function AdminProducts() {
+  const [products, setProducts] = useState<AdminProductRow[]>([]);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<'all' | 'published' | 'draft' | 'featured'>('all');
+  const [category, setCategory] = useState('all');
+  const [error, setError] = useState('');
+  useEffect(() => { fetchAdminProducts().then((rows) => setProducts(rows as AdminProductRow[])).catch(() => setError('Impossible de charger les créations.')); }, []);
+  const categoryNames = useMemo(() => [...new Set(products.map((p) => p.categories?.name?.trim()).filter((name): name is string => Boolean(name)))].sort(), [products]);
+  const filtered = useMemo(() => products.filter((p) =>
+    p.name.toLowerCase().includes(query.toLowerCase())
+    && (status === 'all' || (status === 'published' ? p.published : status === 'draft' ? !p.published : p.featured))
+    && (category === 'all' || p.categories?.name?.trim() === category)
+  ), [products, query, status, category]);
+  async function toggle(product: AdminProductRow, flag: 'published' | 'featured') {
+    try {
+      await setProductFlag(product.id, flag, !product[flag]);
+      setProducts((all) => all.map((p) => p.id === product.id ? { ...p, [flag]: !product[flag] } : p));
+    } catch { setError('La modification n’a pas pu être enregistrée.'); }
+  }
+  async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } }
+  const mainImage = (p: AdminProductRow) => [...(p.product_images || [])].sort((a, b) => Number(b.is_main) - Number(a.is_main) || a.display_order - b.display_order)[0];
+  return <>
+    <AdminTitle title="Créations" description={`${products.length} créations, dont ${products.filter((p) => p.published).length} publiées.`} action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Nouvelle création</Link>} />
+    {error && <Notice text={error} error />}
+    <div className="bg-off-white rounded-soft p-4 mb-5 flex flex-wrap gap-3 items-center">
+      <input className="input-field max-w-xs" placeholder="Rechercher une création…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <select className="input-field max-w-[200px]" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}><option value="all">Tous les statuts</option><option value="published">Publiées</option><option value="draft">Brouillons</option><option value="featured">Coups de cœur</option></select>
+      <select className="input-field max-w-[240px]" value={category} onChange={(e) => setCategory(e.target.value)}><option value="all">Toutes les catégories</option>{categoryNames.map((name) => <option key={name} value={name}>{name}</option>)}</select>
+      <span className="text-sm text-wood-deep/60">{filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
+    </div>
+    <div className="bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm">
+      <thead className="bg-beige/30"><tr><th className="text-left p-4">Création</th><th className="text-left p-4">Prix</th><th className="text-left p-4">Publiée</th><th className="text-left p-4">Coup de cœur</th><th className="text-right p-4">Actions</th></tr></thead>
+      <tbody>{filtered.map((p) => { const image = mainImage(p); return <tr key={p.id} className="border-t border-wood-deep/10">
+        <td className="p-4"><Link to={`/admin/creations/${p.id}`} className="flex items-center gap-3 group">{image ? <img src={thumbUrl(image.public_url)} alt="" className="h-12 w-12 rounded object-cover" loading="lazy" /> : <span className="h-12 w-12 rounded bg-beige/40 flex items-center justify-center text-wood-deep/30"><ImagePlus className="h-5 w-5" /></span>}<div><p className="font-medium group-hover:text-terracotta">{p.name}</p><p className="text-xs text-wood-deep/50">{p.categories?.name || 'Sans catégorie'} · {(p.product_images || []).length} photo{(p.product_images || []).length > 1 ? 's' : ''}</p></div></Link></td>
+        <td className="p-4 whitespace-nowrap">{p.price ? `${p.price} €` : 'Sur demande'}</td>
+        <td className="p-4"><button onClick={() => void toggle(p, 'published')} className={p.published ? 'badge-sage' : 'badge-wood'} title="Cliquer pour changer">{p.published ? 'Publiée' : 'Brouillon'}</button></td>
+        <td className="p-4"><button onClick={() => void toggle(p, 'featured')} aria-label={p.featured ? 'Retirer des coups de cœur' : 'Ajouter aux coups de cœur'} className={p.featured ? 'text-terracotta' : 'text-wood-deep/25 hover:text-terracotta'}><Star className="h-5 w-5" fill={p.featured ? 'currentColor' : 'none'} /></button></td>
+        <td className="p-4"><div className="flex justify-end gap-1">{p.published && <a className="p-2 text-wood-deep/60 hover:text-terracotta" href={`/creations/${p.slug}`} target="_blank" rel="noreferrer" aria-label={`Voir ${p.name} sur le site`}><Eye className="h-4 w-4" /></a>}<Link className="p-2 text-wood-deep/60 hover:text-terracotta" to={`/admin/creations/${p.id}`} aria-label={`Modifier ${p.name}`}><Pencil className="h-4 w-4" /></Link><button className="p-2 text-wood-deep/60 hover:text-red-700" onClick={() => void remove(p.id)} aria-label={`Supprimer ${p.name}`}><Trash2 className="h-4 w-4" /></button></div></td>
+      </tr>; })}</tbody>
+    </table>{filtered.length === 0 && <p className="p-8 text-center text-wood-deep/60">Aucune création trouvée.</p>}</div></div>
+  </>;
+}
 
 const emptyProduct: ProductInput = { name: '', slug: '', short_description: '', description: '', price: null, price_from: false, compare_at_price: null, category_id: null, materials: [], dimensions: '', colors: [], personalizable: false, availability_status: 'made_to_order', stock_quantity: null, production_time: '', maintenance_advice: '', featured: false, published: false, display_order: 0, seo_title: '', seo_description: '' };
+const materialOptions = ['Galet', 'Papier', 'Bois', 'Fil de fer'];
+
 export function AdminProductForm() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [value, setValue] = useState<ProductInput>({ ...emptyProduct, id });
   const [categories, setCategories] = useState<SimpleRow[]>([]);
+  const [seasons, setSeasons] = useState<SimpleRow[]>([]);
+  const [seasonIds, setSeasonIds] = useState<string[]>([]);
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [removedImageIds, setRemovedImageIds] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [image, setImage] = useState<{ path: string; url: string } | null>(null);
-  const [currentImage, setCurrentImage] = useState<{ id: string; url: string } | null>(null);
-  const [imageRemoved, setImageRemoved] = useState(false);
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setError('Impossible de charger les catégories.'));
+    fetchSeasons().then(setSeasons).catch(() => setError('Impossible de charger les saisons.'));
     if (id) {
       supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
-        if (data) setValue(data as ProductInput);
+        if (data) {
+          // On ne renvoie à l'enregistrement que les champs du formulaire.
+          const loaded = Object.fromEntries(Object.keys(emptyProduct).map((key) => [key, (data as Record<string, unknown>)[key]])) as ProductInput;
+          setValue({ ...loaded, id });
+        }
       });
-      supabase.from('product_images').select('id,public_url').eq('product_id', id).eq('is_main', true).maybeSingle().then(({ data }) => {
-        if (data) setCurrentImage({ id: data.id, url: data.public_url });
-      });
+      fetchProductImages(id).then(setImages).catch(() => setError('Impossible de charger les photos.'));
+      fetchProductSeasonIds(id).then(setSeasonIds).catch(() => setError('Impossible de charger les saisons de la création.'));
     }
   }, [id]);
 
@@ -62,63 +124,36 @@ export function AdminProductForm() {
     setSaved(false);
   }
 
+  function toggleMaterial(material: string) {
+    update('materials', value.materials.includes(material) ? value.materials.filter((item) => item !== material) : [...value.materials, material]);
+  }
+
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setError('');
+    setError(''); setSaving(true);
     try {
+      if (id) await recordPreviousSlug(id, slugify(value.slug || value.name));
       const product = await saveProduct(value);
-      if (imageRemoved && currentImage) {
-        await supabase.from('product_images').delete().eq('id', currentImage.id);
-        setCurrentImage(null);
-      }
-      if (image) {
-        if (currentImage) {
-          await supabase.from('product_images').update({
-            storage_path: image.path,
-            public_url: image.url,
-            alt_text: productImageAlt(value.name, value.materials[0]),
-          }).eq('id', currentImage.id);
-          setCurrentImage({ id: currentImage.id, url: image.url });
-        } else {
-          await supabase.from('product_images').insert({
-            product_id: product.id,
-            storage_path: image.path,
-            public_url: image.url,
-            alt_text: productImageAlt(value.name, value.materials[0]),
-            is_main: true,
-            display_order: 0,
-          });
-          const { data: newImg } = await supabase.from('product_images').select('id,public_url').eq('product_id', product.id).eq('is_main', true).maybeSingle();
-          if (newImg) setCurrentImage({ id: newImg.id, url: newImg.public_url });
-        }
-      }
-      setImage(null);
-      setImageRemoved(false);
+      await saveProductImages(product.id, images, removedImageIds);
+      await saveProductSeasons(product.id, seasonIds);
+      setRemovedImageIds([]);
+      setImages(await fetchProductImages(product.id));
+      setValue((v) => ({ ...v, slug: product.slug }));
       setSaved(true);
       if (!id) navigate(`/admin/creations/${product.id}`);
     } catch {
       setError('La création n’a pas pu être enregistrée.');
+    } finally {
+      setSaving(false);
     }
   }
 
-  async function chooseImage(file: File) {
-    try {
-      setImage(await uploadImage(file, 'product-images', 'catalogue', value.slug || value.name));
-      setImageRemoved(false);
-    } catch {
-      setError('L’image n’a pas pu être importée.');
-    }
-  }
-
-  function removeImage() {
-    setImage(null);
-    setImageRemoved(true);
-  }
-
-  const previewUrl = image?.url || (!imageRemoved ? currentImage?.url : null);
+  const slugPreview = slugify(value.slug || value.name);
+  const seoTitle = value.seo_title || `${value.name || 'Nom de la création'} – Décoration faite main | L'Atelier d'Isabelle`;
+  const seoDescription = value.seo_description || value.short_description || value.description;
 
   return <>
-    <AdminTitle title={id ? 'Modifier une création' : 'Nouvelle création'} description="Les informations peuvent être complétées et modifiées à tout moment." />
+    <AdminTitle title={id ? 'Modifier une création' : 'Nouvelle création'} description="Les informations peuvent être complétées et modifiées à tout moment." action={id && value.published ? <a href={`/creations/${slugPreview}`} target="_blank" rel="noreferrer" className="btn-secondary"><Eye className="h-4 w-4" />Voir sur le site</a> : undefined} />
     {error && <Notice text={error} error />}
     {saved && <Notice text="La création a bien été enregistrée." />}
     <form onSubmit={submit} className="space-y-6 pb-20">
@@ -127,68 +162,55 @@ export function AdminProductForm() {
           <Panel title="Présentation">
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Nom" required><input className="input-field" required value={value.name} onChange={(e) => update('name', e.target.value)} /></Field>
-              <Field label="Slug"><input className="input-field" value={value.slug} onChange={(e) => update('slug', e.target.value)} /></Field>
+              <Field label="Adresse de la page"><input className="input-field" placeholder="Générée depuis le nom" value={value.slug} onChange={(e) => update('slug', e.target.value)} /><span className="block text-xs text-wood-deep/50 mt-1 break-all">atelier-isabelle.fr/creations/{slugPreview || '…'}</span></Field>
             </div>
-            <Field label="Description courte"><input className="input-field" value={value.short_description} onChange={(e) => update('short_description', e.target.value)} /></Field>
+            <Field label="Description courte (liste des créations et Google)"><input className="input-field" value={value.short_description} onChange={(e) => update('short_description', e.target.value)} /></Field>
             <Field label="Description complète"><textarea className="input-field min-h-32" value={value.description} onChange={(e) => update('description', e.target.value)} /></Field>
+          </Panel>
+          <Panel title="Photos">
+            <ProductGalleryEditor images={images} onChange={(next) => { setImages(next); setSaved(false); }} onRemove={(image) => { if (image.id) setRemovedImageIds((ids) => [...ids, image.id!]); setImages((all) => all.filter((item) => item !== image)); setSaved(false); }} productName={value.name} productSlug={slugPreview} material={value.materials[0]} />
           </Panel>
           <Panel title="Détails">
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Prix en euros"><input className="input-field" type="number" min="0" step="0.01" value={value.price ?? ''} onChange={(e) => update('price', e.target.value ? Number(e.target.value) : null)} /></Field>
-              <Field label="Ancien prix"><input className="input-field" type="number" min="0" step="0.01" value={value.compare_at_price ?? ''} onChange={(e) => update('compare_at_price', e.target.value ? Number(e.target.value) : null)} /></Field>
+              <Field label="Prix en euros"><input className="input-field" type="number" min="0" step="0.01" placeholder="Vide = sur demande" value={value.price ?? ''} onChange={(e) => update('price', e.target.value ? Number(e.target.value) : null)} /></Field>
+              <Field label="Ancien prix (prix barré)"><input className="input-field" type="number" min="0" step="0.01" value={value.compare_at_price ?? ''} onChange={(e) => update('compare_at_price', e.target.value ? Number(e.target.value) : null)} /></Field>
               <Field label="Catégorie"><select className="input-field" value={value.category_id || ''} onChange={(e) => update('category_id', e.target.value || null)}><option value="">Sans catégorie</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></Field>
               <Field label="Disponibilité"><select className="input-field" value={value.availability_status} onChange={(e) => update('availability_status', e.target.value as ProductInput['availability_status'])}><option value="available">Disponible</option><option value="made_to_order">Sur commande</option><option value="sold">Vendue</option><option value="unavailable">Indisponible</option></select></Field>
             </div>
+            <div className="mb-4"><span className="label-field">Matières</span><div className="flex flex-wrap gap-2 mt-1">{[...materialOptions, ...value.materials.filter((m) => !materialOptions.includes(m))].map((material) => <label key={material} className={`text-sm px-3 py-1.5 rounded-full border cursor-pointer ${value.materials.includes(material) ? 'bg-terracotta text-off-white border-terracotta' : 'border-wood-deep/20 hover:border-terracotta'}`}><input type="checkbox" className="sr-only" checked={value.materials.includes(material)} onChange={() => toggleMaterial(material)} />{material}</label>)}</div></div>
+            <div className="mb-4"><span className="label-field">Saisons</span><div className="flex flex-wrap gap-2 mt-1">{seasons.map((season) => <label key={season.id} className={`text-sm px-3 py-1.5 rounded-full border cursor-pointer ${seasonIds.includes(season.id) ? 'bg-sage text-off-white border-sage' : 'border-wood-deep/20 hover:border-sage'}`}><input type="checkbox" className="sr-only" checked={seasonIds.includes(season.id)} onChange={() => { setSeasonIds((ids) => ids.includes(season.id) ? ids.filter((x) => x !== season.id) : [...ids, season.id]); setSaved(false); }} />{season.name}</label>)}</div></div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Matières (séparées par des virgules)"><input className="input-field" value={value.materials.join(', ')} onChange={(e) => update('materials', e.target.value.split(',').map((x) => x.trim()).filter(Boolean))} /></Field>
               <Field label="Couleurs (séparées par des virgules)"><input className="input-field" value={value.colors.join(', ')} onChange={(e) => update('colors', e.target.value.split(',').map((x) => x.trim()).filter(Boolean))} /></Field>
-              <Field label="Dimensions"><input className="input-field" value={value.dimensions} onChange={(e) => update('dimensions', e.target.value)} /></Field>
-              <Field label="Délai de fabrication"><input className="input-field" value={value.production_time} onChange={(e) => update('production_time', e.target.value)} /></Field>
+              <Field label="Dimensions"><input className="input-field" placeholder="Ex. 13x18 à poser ou à suspendre" value={value.dimensions} onChange={(e) => update('dimensions', e.target.value)} /></Field>
+              <Field label="Délai de fabrication"><input className="input-field" placeholder="Ex. 1 semaine" value={value.production_time} onChange={(e) => update('production_time', e.target.value)} /></Field>
+              <Field label="Ordre d’affichage"><input className="input-field" type="number" min="0" value={value.display_order} onChange={(e) => update('display_order', Number(e.target.value))} /></Field>
             </div>
             <Field label="Conseils d’entretien"><textarea className="input-field" value={value.maintenance_advice} onChange={(e) => update('maintenance_advice', e.target.value)} /></Field>
-          </Panel>
-          <Panel title="Image principale">
-            <div className="flex flex-col gap-4">
-              {previewUrl ? (
-                <div className="relative inline-block w-fit">
-                  <img src={previewUrl} alt="Aperçu de l’image principale" className="h-44 w-44 rounded-soft object-cover shadow-soft" />
-                  <button type="button" onClick={removeImage} className="absolute -top-2 -right-2 bg-red-700 text-off-white rounded-full p-1.5 hover:bg-red-800 transition-colors" aria-label="Supprimer l’image">
-                    <X className="h-4 w-4" />
-                  </button>
-                  {image && <span className="absolute bottom-2 left-2 bg-terracotta text-off-white text-xs px-2 py-1 rounded-soft">Nouvelle image</span>}
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-44 w-44 rounded-soft border-2 border-dashed border-wood-deep/20 bg-beige/20 text-wood-deep/40">
-                  <ImagePlus className="h-8 w-8" />
-                </div>
-              )}
-              <div>
-                <label className="btn-secondary cursor-pointer inline-flex items-center gap-2 w-fit">
-                  <ImagePlus className="h-4 w-4" />
-                  {previewUrl ? 'Remplacer l’image' : 'Choisir une image'}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) void chooseImage(file); }} />
-                </label>
-                <p className="mt-2 text-xs text-wood-deep/50">JPG, PNG ou WebP — 8 Mo maximum.</p>
-              </div>
-            </div>
           </Panel>
         </div>
         <div className="space-y-6">
           <Panel title="Publication">
             <label className="flex gap-3 items-center text-sm"><input type="checkbox" className="accent-terracotta" checked={value.published} onChange={(e) => update('published', e.target.checked)} /> Publier sur le site</label>
-            <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.featured} onChange={(e) => update('featured', e.target.checked)} /> Mettre en avant</label>
+            <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.featured} onChange={(e) => update('featured', e.target.checked)} /> Coup de cœur (mis en avant sur l’accueil)</label>
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.price_from} onChange={(e) => update('price_from', e.target.checked)} /> Afficher « À partir de »</label>
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.personalizable} onChange={(e) => update('personalizable', e.target.checked)} /> Personnalisable</label>
           </Panel>
-          <Panel title="Référencement">
-            <Field label="Titre SEO"><input className="input-field" value={value.seo_title} onChange={(e) => update('seo_title', e.target.value)} /></Field>
-            <Field label="Description SEO"><textarea className="input-field" value={value.seo_description} onChange={(e) => update('seo_description', e.target.value)} /></Field>
+          <Panel title="Référencement Google">
+            <p className="text-xs text-wood-deep/60 mb-4">Facultatif : laissés vides, le titre et la description sont créés automatiquement.</p>
+            <Field label={`Titre (${value.seo_title.length}/60)`}><input className="input-field" placeholder={seoTitle} value={value.seo_title} onChange={(e) => update('seo_title', e.target.value)} /></Field>
+            <Field label={`Description (${value.seo_description.length}/158)`}><textarea className="input-field" placeholder={seoDescription.slice(0, 158)} value={value.seo_description} onChange={(e) => update('seo_description', e.target.value)} /></Field>
+            <div className="rounded-soft border border-wood-deep/10 bg-white p-3">
+              <p className="text-xs text-wood-deep/50">Aperçu dans Google</p>
+              <p className="text-xs text-sage mt-1 break-all">atelier-isabelle.fr › creations › {slugPreview}</p>
+              <p className="text-[#1a0dab] text-base leading-snug mt-0.5 line-clamp-2">{seoTitle}</p>
+              <p className="text-xs text-wood-deep/70 mt-1 line-clamp-3">{metaDescription(seoDescription || '')}</p>
+            </div>
           </Panel>
         </div>
       </div>
       <div className="fixed bottom-0 right-0 left-0 lg:left-72 bg-off-white border-t border-wood-deep/10 p-3 flex justify-end gap-3">
-        <Link to="/admin/creations" className="btn-secondary">Annuler</Link>
-        <button className="btn-primary"><Check className="h-4 w-4" />Enregistrer</button>
+        <Link to="/admin/creations" className="btn-secondary">Retour à la liste</Link>
+        <button className="btn-primary" disabled={saving}><Check className="h-4 w-4" />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
       </div>
     </form>
   </>;
@@ -227,11 +249,9 @@ export function AdminRequests() {
   </>;
 }
 
-export function AdminSimplePage({ title, kind }: { title: string; kind: 'categories' | 'seasons' | 'contents' | 'medias' | 'settings' }) {
+export function AdminSimplePage({ title, kind }: { title: string; kind: 'categories' | 'seasons' | 'medias' }) {
   const [items, setItems] = useState<SimpleRow[]>([]);
   const [draft, setDraft] = useState<SimpleRow | null>(null);
-  const [contents, setContents] = useState<ContentRow[]>([]);
-  const [contentDraft, setContentDraft] = useState<ContentDraft | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -241,7 +261,6 @@ export function AdminSimplePage({ title, kind }: { title: string; kind: 'categor
     setError('');
     if (kind === 'categories') fetchCategories().then(setItems).catch(() => setError('Impossible de charger les catégories.'));
     else if (kind === 'seasons') fetchSeasons().then(setItems).catch(() => setError('Impossible de charger les saisons.'));
-    else if (kind === 'contents') fetchSiteContents().then(setContents).catch(() => setError('Impossible de charger les contenus.'));
     else if (kind === 'medias') fetchMedia().then(setMedia).catch(() => setError('Impossible de charger la médiathèque.'));
   }, [kind]);
 
@@ -260,43 +279,14 @@ export function AdminSimplePage({ title, kind }: { title: string; kind: 'categor
     if (!window.confirm(`Supprimer « ${item.name} » ?`)) return;
     try { if (kind === 'categories') await deleteCategory(item.id); else await deleteSeason(item.id); setItems((current) => current.filter((entry) => entry.id !== item.id)); } catch { setError('La suppression a échoué.'); }
   }
-  function contentValue(value: unknown) { return typeof value === 'string' ? value : JSON.stringify(value, null, 2); }
-  function startContent(item?: ContentRow) { setError(''); setContentDraft(item ? { ...item, value: contentValue(item.value) } : { page: 'accueil', section: 'hero', content_key: '', content_type: 'text', value: '' }); }
-  async function saveContent(event: FormEvent) {
-    event.preventDefault();
-    if (!contentDraft?.page.trim() || !contentDraft.section.trim() || !contentDraft.content_key.trim()) return;
-    try { const saved = await saveSiteContent({ ...contentDraft, value: String(contentDraft.value) }); setContents((current) => contentDraft.id ? current.map((item) => item.id === contentDraft.id ? saved as ContentRow : item) : [...current.filter((item) => item.id !== saved.id), saved as ContentRow]); setContentDraft(null); setMessage('Le contenu a bien été enregistré.'); } catch { setError('Le contenu n’a pas pu être enregistré. Vérifiez le format JSON si nécessaire.'); }
-  }
-  async function removeContent(item: ContentRow) { if (!window.confirm(`Supprimer « ${item.content_key} » ?`)) return; try { await supabase.from('site_contents').delete().eq('id', item.id); setContents((current) => current.filter((entry) => entry.id !== item.id)); } catch { setError('Le contenu n’a pas pu être supprimé.'); } }
   async function uploadMedia(file: File) { setUploading(true); setError(''); try { const uploaded = await uploadImage(file, 'site-images', 'library'); setMedia((current) => [{ bucket: 'site-images', path: uploaded.path, url: uploaded.url, name: file.name }, ...current]); setMessage('L’image a bien été ajoutée à la médiathèque.'); } catch { setError('L’image n’a pas pu être importée.'); } finally { setUploading(false); } }
   async function removeMedia(item: MediaItem) { if (!window.confirm(`Supprimer « ${item.name} » ?`)) return; try { await deleteMedia(item); setMedia((current) => current.filter((entry) => !(entry.bucket === item.bucket && entry.path === item.path))); } catch { setError('Le média n’a pas pu être supprimé.'); } }
 
   const manageable = kind === 'categories' || kind === 'seasons';
-  function renderPreview(draft: ContentDraft) {
-    const raw = String(draft.value || '');
-    if (draft.content_type === 'image') {
-      if (!raw) return <p className="text-sm text-wood-deep/40">Saisissez une URL d’image pour voir l’aperçu.</p>;
-      return <img src={raw} alt="Aperçu" className="max-h-48 rounded-soft object-contain bg-beige/20" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
-    }
-    if (draft.content_type === 'link') {
-      if (!raw) return <p className="text-sm text-wood-deep/40">Saisissez une URL pour voir l’aperçu.</p>;
-      return <a href={raw} target="_blank" rel="noreferrer" className="text-terracotta hover:underline break-all text-sm">{raw}</a>;
-    }
-    if (draft.content_type === 'json') {
-      try { return <pre className="text-xs whitespace-pre-wrap break-words bg-beige/20 rounded-soft p-3 max-h-48 overflow-auto">{JSON.stringify(JSON.parse(raw || '{}'), null, 2)}</pre>; }
-      catch { return <p className="text-sm text-red-700">Le JSON n’est pas valide pour le moment.</p>; }
-    }
-    if (draft.content_type === 'textarea') return <p className="text-sm whitespace-pre-wrap leading-relaxed text-wood-deep/80">{raw || <span className="text-wood-deep/40">L’aperçu apparaîtra ici.</span>}</p>;
-    return <p className="text-sm leading-relaxed text-wood-deep/80">{raw || <span className="text-wood-deep/40">L’aperçu apparaîtra ici.</span>}</p>;
-  }
 
-  if (kind === 'contents') return <><AdminTitle title={title} description="Modifiez les textes du site sans toucher au code." action={<button className="btn-primary" onClick={() => startContent()}><Plus className="h-4 w-4" />Ajouter un contenu</button>} />{error && <Notice text={error} error />}{message && <Notice text={message} />}<div className="grid xl:grid-cols-[minmax(0,1fr)_400px] gap-6 items-start"><div className="bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="grid grid-cols-[1fr_1fr_1.2fr_auto] gap-3 p-4 bg-beige/30 text-xs uppercase tracking-wide text-wood-deep/60"><span>Page</span><span>Section</span><span>Clé</span><span /></div>{contents.map((item) => <div key={item.id} className="grid grid-cols-[1fr_1fr_1.2fr_auto] gap-3 items-center p-4 border-t border-wood-deep/10 text-sm"><span>{item.page}</span><span>{item.section}</span><span><strong className="font-medium">{item.content_key}</strong><small className="block text-xs text-wood-deep/45">{item.content_type}</small></span><div className="flex gap-1"><button className="p-2 text-wood-deep/55 hover:text-terracotta" onClick={() => startContent(item)} aria-label="Modifier"><Pencil className="h-4 w-4" /></button><button className="p-2 text-wood-deep/55 hover:text-red-700" onClick={() => void removeContent(item)} aria-label="Supprimer"><Trash2 className="h-4 w-4" /></button></div></div>)}{!contents.length && <p className="p-8 text-center text-wood-deep/60">Aucun contenu pour le moment.</p>}</div>{contentDraft && <form onSubmit={(event) => void saveContent(event)} className="bg-off-white rounded-soft p-6 shadow-soft sticky top-24"><div className="flex justify-between mb-5"><h2 className="text-xl font-medium">{contentDraft.id ? 'Modifier' : 'Nouveau'} contenu</h2><button type="button" onClick={() => setContentDraft(null)} aria-label="Fermer"><X className="h-5 w-5" /></button></div><Field label="Page" required><input className="input-field" required value={contentDraft.page} onChange={(event) => setContentDraft({ ...contentDraft, page: event.target.value })} placeholder="accueil" /></Field><Field label="Section" required><input className="input-field" required value={contentDraft.section} onChange={(event) => setContentDraft({ ...contentDraft, section: event.target.value })} placeholder="hero" /></Field><Field label="Clé du contenu" required><input className="input-field" required value={contentDraft.content_key} onChange={(event) => setContentDraft({ ...contentDraft, content_key: event.target.value })} placeholder="titre" /></Field><Field label="Type"><select className="input-field" value={contentDraft.content_type} onChange={(event) => setContentDraft({ ...contentDraft, content_type: event.target.value })}>{['text', 'textarea', 'richtext', 'image', 'link', 'json'].map((type) => <option key={type}>{type}</option>)}</select></Field><Field label="Valeur"><textarea className="input-field min-h-40" value={String(contentDraft.value)} onChange={(event) => setContentDraft({ ...contentDraft, value: event.target.value })} /></Field><div className="mt-4 mb-4 rounded-soft border border-wood-deep/10 bg-cream/50 p-4"><div className="flex items-center gap-2 mb-3"><Eye className="h-4 w-4 text-wood-deep/50" /><p className="text-xs uppercase tracking-wide text-wood-deep/50">Aperçu</p></div>{renderPreview(contentDraft)}</div><div className="flex gap-3"><button type="button" className="btn-secondary flex-1" onClick={() => setContentDraft(null)}>Annuler</button><button className="btn-primary flex-1"><Check className="h-4 w-4" />Enregistrer</button></div></form>}</div></>;
   if (kind === 'medias') return <><AdminTitle title={title} description="Importez, prévisualisez et supprimez les images utilisées par votre site." action={<label className={`btn-primary cursor-pointer ${uploading ? 'opacity-60 pointer-events-none' : ''}`}><Upload className="h-4 w-4" />{uploading ? 'Import en cours…' : 'Importer une image'}<input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadMedia(file); event.currentTarget.value = ''; }} /></label>} />{error && <Notice text={error} error />}{message && <Notice text={message} />}<div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">{media.map((item) => <div key={`${item.bucket}-${item.path}`} className="bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="aspect-square bg-beige/20"><img src={item.url} alt={item.name} className="h-full w-full object-cover" /></div><div className="p-4"><p className="text-sm font-medium truncate" title={item.name}>{item.name}</p><p className="text-xs text-wood-deep/45 mt-1">{item.bucket === 'site-images' ? 'Site' : 'Création'}{item.size ? ` · ${(item.size / 1024 / 1024).toFixed(1)} Mo` : ''}</p><div className="flex gap-2 mt-3"><a href={item.url} target="_blank" rel="noreferrer" className="btn-secondary text-xs"><ExternalLink className="h-3.5 w-3.5" />Ouvrir</a><button className="p-2 text-wood-deep/55 hover:text-red-700" onClick={() => void removeMedia(item)} aria-label={`Supprimer ${item.name}`}><Trash2 className="h-4 w-4" /></button></div></div></div>)}{!media.length && <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 bg-off-white rounded-soft p-10 text-center text-wood-deep/60">Aucune image dans la médiathèque.</div>}</div></>;
   return <><AdminTitle title={title} description="Gérez ces éléments sans modifier le code du site." action={manageable ? <button className="btn-primary" onClick={startNew}><Plus className="h-4 w-4" />Ajouter</button> : undefined} />{error && <Notice text={error} error />}{manageable ? <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start"><div className="grid sm:grid-cols-2 gap-4">{items.map((item) => <div key={item.id} className="bg-off-white rounded-soft p-5 shadow-soft border border-transparent hover:border-terracotta/30 transition-colors"><div className="flex items-start justify-between gap-3"><div><p className="font-medium">{item.name}</p><p className="text-xs text-wood-deep/50 mt-1">/{item.slug}</p></div><span className="text-xs text-sage">#{item.display_order ?? 0}</span></div>{kind === 'categories' && <p className="text-sm text-wood-deep/60 mt-4 line-clamp-2">{item.description || 'Aucune description'}</p>}<div className="flex gap-2 mt-5 pt-4 border-t border-wood-deep/10"><button className="btn-secondary text-sm" onClick={() => startEdit(item)}><Pencil className="h-4 w-4" />Modifier</button><button className="p-2 text-wood-deep/55 hover:text-red-700" onClick={() => void remove(item)} aria-label={`Supprimer ${item.name}`}><Trash2 className="h-4 w-4" /></button></div></div>)}{!items.length && <div className="sm:col-span-2 bg-off-white rounded-soft p-8 text-center text-wood-deep/60">Aucun élément pour le moment.</div>}</div>{draft && <form onSubmit={(event) => void save(event)} className="bg-off-white rounded-soft p-6 shadow-soft sticky top-24"><div className="flex items-center justify-between gap-3 mb-5"><h2 className="text-xl font-medium">{draft.id ? 'Modifier' : 'Nouvelle'} {kind === 'categories' ? 'catégorie' : 'saison'}</h2><button type="button" className="p-1 text-wood-deep/50 hover:text-wood-deep" onClick={() => setDraft(null)} aria-label="Fermer"><X className="h-5 w-5" /></button></div><Field label="Nom" required><input className="input-field" required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></Field><Field label="Identifiant URL"><input className="input-field" placeholder="Généré automatiquement si vide" value={draft.slug} onChange={(event) => setDraft({ ...draft, slug: event.target.value })} /></Field>{kind === 'categories' ? <><Field label="Description"><textarea className="input-field min-h-28" value={draft.description || ''} onChange={(event) => setDraft({ ...draft, description: event.target.value })} /></Field><label className="flex gap-3 items-center text-sm mb-4"><input type="checkbox" className="accent-terracotta" checked={draft.published ?? true} onChange={(event) => setDraft({ ...draft, published: event.target.checked })} /> Visible sur le site</label></> : <><Field label="Couleur"><input className="input-field" type="text" value={draft.color || ''} onChange={(event) => setDraft({ ...draft, color: event.target.value })} /></Field><Field label="Icône"><input className="input-field" value={draft.icon || ''} onChange={(event) => setDraft({ ...draft, icon: event.target.value })} /></Field></>}<Field label="Ordre d’affichage"><input className="input-field" type="number" min="0" value={draft.display_order ?? 0} onChange={(event) => setDraft({ ...draft, display_order: Number(event.target.value) })} /></Field><div className="flex gap-3"><button type="button" className="btn-secondary flex-1" onClick={() => setDraft(null)}>Annuler</button><button className="btn-primary flex-1"><Check className="h-4 w-4" />Enregistrer</button></div></form>}</div> : <div className="bg-off-white rounded-soft p-8 text-wood-deep/70"><p>Cette section n’a pas encore de formulaire de gestion.</p></div>}</>;
 }
-function Panel({ title, children }: { title: string; children: ReactNode }) { return <section className="bg-off-white rounded-soft shadow-soft p-5 sm:p-6"><h2 className="text-xl font-medium mb-5">{title}</h2>{children}</section>; }
-function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) { return <label className="block mb-4"><span className="label-field">{label} {required && <span className="text-terracotta">*</span>}</span>{children}</label>; }
-function Notice({ text, error = false }: { text: string; error?: boolean }) { return <div className={`mb-6 rounded-soft p-4 text-sm ${error ? 'bg-red-50 text-red-800' : 'bg-sage/10 text-sage'}`}>{text}</div>; }
 
 const legalFieldGroups = [
   { key: 'identity', label: 'Identité de l’éditeur', fields: [['editor_full_name', 'Nom et prénom / dénomination'], ['editor_legal_form', 'Forme ou statut juridique'], ['editor_address', 'Adresse professionnelle'], ['editor_email', 'Adresse e-mail'], ['editor_phone', 'Téléphone'], ['editor_siren', 'SIREN'], ['editor_siret', 'SIRET'], ['editor_rcs', 'RNE ou RCS'], ['editor_rcs_city', 'Ville d’immatriculation'], ['editor_capital', 'Capital social'], ['editor_vat_number', 'TVA intracommunautaire'], ['editor_publication_director', 'Directeur ou directrice de publication']], },
@@ -440,7 +430,7 @@ export function AdminHeroSlides() {
   </>;
 }
 
-const emptyEvent: Partial<EventRow> = { title: '', location: '', description: '', image: null, start_date: null, end_date: null, is_permanent: false, display_order: 0, published: true };
+const emptyEvent: Partial<EventRow> = { title: '', location: '', description: '', image: null, start_date: null, end_date: null, is_permanent: false, link_url: null, display_order: 0, published: true };
 export function AdminEvents() {
   const [items, setItems] = useState<EventRow[]>([]);
   const [draft, setDraft] = useState<Partial<EventRow> & { id?: string } | null>(null);
@@ -497,6 +487,7 @@ export function AdminEvents() {
           </div>
           <Field label="Titre" required><input className="input-field" required value={draft.title || ''} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder="La Boutik’art" /></Field>
           <Field label="Lieu"><input className="input-field" value={draft.location || ''} onChange={(e) => setDraft({ ...draft, location: e.target.value })} placeholder="Saint-Dié-des-Vosges" /></Field>
+          <Field label="Lien (facultatif)"><input className="input-field" type="url" value={draft.link_url || ''} onChange={(e) => setDraft({ ...draft, link_url: e.target.value || null })} placeholder="https://… site de la boutique ou page de l’événement" /></Field>
           <Field label="Description"><textarea className="input-field min-h-24" value={draft.description || ''} onChange={(e) => setDraft({ ...draft, description: e.target.value })} /></Field>
           <div className="mb-4">
             <ImageUploader

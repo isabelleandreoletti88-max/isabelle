@@ -34,6 +34,10 @@ const AdminLegal = lazy(() => admin().then((m) => ({ default: m.AdminLegal })));
 const AdminHeroSlides = lazy(() => admin().then((m) => ({ default: m.AdminHeroSlides })));
 const AdminSiteImages = lazy(() => admin().then((m) => ({ default: m.AdminSiteImages })));
 const AdminEvents = lazy(() => admin().then((m) => ({ default: m.AdminEvents })));
+const adminPages = () => import('@/adminPages');
+const AdminSettings = lazy(() => adminPages().then((m) => ({ default: m.AdminSettings })));
+const AdminTexts = lazy(() => adminPages().then((m) => ({ default: m.AdminTexts })));
+const AdminMaterials = lazy(() => adminPages().then((m) => ({ default: m.AdminMaterials })));
 
 function AdminNoIndex() {
   return <><SEO title="Administration | L'Atelier d'Isabelle" noindex /><Outlet /></>;
@@ -63,11 +67,12 @@ function App() {
       <Route path="/admin/hero" element={<AdminHeroSlides />} />
       <Route path="/admin/evenements" element={<AdminEvents />} />
       <Route path="/admin/images" element={<AdminSiteImages />} />
-      <Route path="/admin/contenus" element={<AdminSimplePage title="Contenus du site" kind="contents" />} />
+      <Route path="/admin/contenus" element={<AdminTexts />} />
+      <Route path="/admin/matieres" element={<AdminMaterials />} />
       <Route path="/admin/medias" element={<AdminSimplePage title="Médiathèque" kind="medias" />} />
       <Route path="/admin/demandes" element={<AdminRequests />} />
       <Route path="/admin/legal" element={<AdminLegal />} />
-      <Route path="/admin/parametres" element={<AdminSimplePage title="Paramètres" kind="settings" />} />
+      <Route path="/admin/parametres" element={<AdminSettings />} />
     </Route></Route>
     </Route>
     <Route element={<SiteLayout />}>

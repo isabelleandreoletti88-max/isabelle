@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, ArrowRight } from 'lucide-react';
+import { Calendar, ExternalLink, MapPin } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { useSiteSettings, useSiteTexts } from '@/lib/siteData';
 import { breadcrumbJsonLd } from '@/lib/structuredData';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionTitle from '@/components/SectionTitle';
 import CallToAction from '@/components/CallToAction';
-import { siteConfig } from '@/config/site';
 import { fetchPublicEvents, type EventRow } from '@/lib/catalogService';
 
 function formatDateRange(start: string | null, end: string | null): string {
@@ -17,6 +17,8 @@ function formatDateRange(start: string | null, end: string | null): string {
 }
 
 export function EventsPage() {
+  const settings = useSiteSettings();
+  const text = useSiteTexts();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,8 +44,8 @@ export function EventsPage() {
           <SectionTitle
             as="h1"
             eyebrow="Événements"
-            title="Retrouvez l'atelier près de chez vous"
-            subtitle="Isabelle expose ses créations dans des boutiques partenaires et participe à des marchés de créateurs. Venez découvrir les pièces en vrai et échanger directement."
+            title={text('evenements.entete.titre')}
+            subtitle={text('evenements.entete.texte')}
           />
 
           {loading && <p className="mt-12 text-center text-wood-deep/60">Chargement des événements…</p>}
@@ -76,6 +78,11 @@ export function EventsPage() {
                       <span className="mt-4 inline-flex items-center gap-2 text-sm text-sage-dark">
                         <Calendar className="h-4 w-4" /> Disponible en permanence
                       </span>
+                      {event.link_url && (
+                        <a href={event.link_url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm text-terracotta hover:underline">
+                          Plus d’informations <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                     </div>
                   </article>
                 ))}
@@ -130,7 +137,7 @@ export function EventsPage() {
               </p>
               <p className="mt-4 text-sm text-wood-deep/55">
                 Pour ne rien manquer, suivez l'atelier sur{' '}
-                <a href={siteConfig.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
+                <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
                 {' '}ou{' '}
                 <Link to="/contact" className="text-terracotta hover:underline">contactez Isabelle</Link>.
               </p>
@@ -146,7 +153,7 @@ export function EventsPage() {
               </p>
               <p className="mt-4 text-sm text-wood-deep/55">
                 Pour ne rien manquer, suivez l'atelier sur{' '}
-                <a href={siteConfig.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
+                <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
                 {' '}ou{' '}
                 <Link to="/contact" className="text-terracotta hover:underline">contactez Isabelle</Link>.
               </p>

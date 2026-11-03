@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Mail, Phone, MapPin, Clock, Heart, Lock } from 'lucide-react';
 import { siteConfig, mainNav } from '@/config/site';
+import { useSiteSettings } from '@/lib/siteData';
 import { useSiteImages } from '@/lib/siteImages';
 
 export default function Footer() {
+  const settings = useSiteSettings();
   const { images } = useSiteImages();
   const year = new Date().getFullYear();
 
@@ -19,9 +21,9 @@ export default function Footer() {
               alt={`Logo ${siteConfig.name}`}
               className="h-12 w-auto mb-4 brightness-0 invert"
             />
-            <p className="font-script text-xl text-honey-light mb-2">{siteConfig.signature}</p>
+            <p className="font-script text-xl text-honey-light mb-2">{settings.slogan}</p>
             <p className="text-sm text-cream/70 leading-relaxed">
-              Créations décoratives faites main, au rythme des saisons.
+              {settings.footer_text}
             </p>
           </div>
 
@@ -50,48 +52,48 @@ export default function Footer() {
               Contact
             </p>
             <ul className="space-y-3 text-sm text-cream/70">
-              {siteConfig.phone && (
+              {settings.phone && (
                 <li className="flex items-start gap-2.5">
                   <Phone className="h-4 w-4 mt-0.5 shrink-0 text-honey-light" />
-                  <a href={`tel:${siteConfig.phone}`} className="hover:text-terracotta transition-colors">
-                    {siteConfig.phone}
+                  <a href={`tel:${settings.phone}`} className="hover:text-terracotta transition-colors">
+                    {settings.phone}
                   </a>
                 </li>
               )}
-              {siteConfig.email && (
+              {settings.email && (
                 <li className="flex items-start gap-2.5">
                   <Mail className="h-4 w-4 mt-0.5 shrink-0 text-honey-light" />
                   <a
-                    href={`mailto:${siteConfig.email}`}
+                    href={`mailto:${settings.email}`}
                     className="hover:text-terracotta transition-colors break-all"
                   >
-                    {siteConfig.email}
+                    {settings.email}
                   </a>
                 </li>
               )}
-              {siteConfig.city && (
+              {settings.city && (
                 <li className="flex items-start gap-2.5">
                   <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-honey-light" />
-                  <span>{siteConfig.city}</span>
+                  <span>{settings.city}</span>
                 </li>
               )}
-              {siteConfig.hours && (
+              {settings.hours && (
                 <li className="flex items-start gap-2.5">
                   <Clock className="h-4 w-4 mt-0.5 shrink-0 text-honey-light" />
-                  <span>{siteConfig.hours}</span>
+                  <span>{settings.hours}</span>
                 </li>
               )}
-              {!siteConfig.email && !siteConfig.phone && (
+              {!settings.email && !settings.phone && (
                 <li className="text-cream/50 italic">Coordonnées à compléter</li>
               )}
             </ul>
 
             {/* Réseaux sociaux */}
-            {(siteConfig.facebook || siteConfig.instagram) && (
+            {(settings.facebook || settings.instagram) && (
               <div className="flex gap-3 mt-4">
-                {siteConfig.facebook && (
+                {settings.facebook && (
                   <a
-                    href={siteConfig.facebook}
+                    href={settings.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
@@ -100,9 +102,9 @@ export default function Footer() {
                     <Facebook className="h-4 w-4" />
                   </a>
                 )}
-                {siteConfig.instagram && (
+                {settings.instagram && (
                   <a
-                    href={siteConfig.instagram}
+                    href={settings.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"

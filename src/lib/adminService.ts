@@ -49,27 +49,6 @@ export async function updateRequestStatus(id: string, status: string, adminNotes
   return updateRequest(id, status, adminNotes);
 }
 
-export async function fetchSiteContents() {
-  const { data, error } = await supabase.from('site_contents').select('*').order('page').order('section').order('content_key');
-  if (error) throw new Error('Impossible de charger les contenus.');
-  return data ?? [];
-}
-
-export async function saveSiteContent(input: { id?: string; page: string; section: string; content_key: string; content_type: string; value: string }) {
-  const payload = {
-    page: input.page.trim(),
-    section: input.section.trim(),
-    content_key: input.content_key.trim(),
-    content_type: input.content_type,
-    value: input.content_type === 'json' ? JSON.parse(input.value || '{}') : input.value,
-  };
-  const result = input.id
-    ? await supabase.from('site_contents').update(payload).eq('id', input.id).select().maybeSingle()
-    : await supabase.from('site_contents').upsert(payload, { onConflict: 'page,section,content_key' }).select().maybeSingle();
-  if (result.error || !result.data) throw new Error('Le contenu n’a pas pu être enregistré.');
-  return result.data;
-}
-
 export async function deleteSiteContent(id: string) {
   const { error } = await supabase.from('site_contents').delete().eq('id', id);
   if (error) throw new Error('Le contenu n’a pas pu être supprimé.');
@@ -154,4 +133,120 @@ export async function uploadImage(file: File, bucket: 'product-images' | 'site-i
   }
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { path, url: data.publicUrl };
+}
+
+// --- Création : ancienne adresse conservée quand l'adresse change ---
+
+export async function recordPreviousSlug(id: string, newSlug: string) {
+  const { data } = await supabase.from('products').select('slug').eq('id', id).maybeSingle();
+  if (data?.slug && data.slug !== newSlug) await supabase.from('products').update({ previous_slug: data.slug }).eq('id', id);
+}
+
+// --- Galerie photos d'une création ---
+
+export type ProductImageRow = { id: string; product_id: string; storage_path: string; public_url: string; alt_text: string; display_order: number; is_main: boolean };
+
+export async function fetchProductImages(productId: string) {
+  const { data, error } = await supabase.from('product_images').select('*').eq('product_id', productId).order('is_main', { ascending: false }).order('display_order');
+  if (error) throw new Error('Impossible de charger les photos.');
+  return (data ?? []) as ProductImageRow[];
+}
+
+/** Enregistre l'ordre, la photo principale et les textes alternatifs de toute la galerie. */
+export type GalleryImage = Omit<ProductImageRow, 'id' | 'product_id'> & { id?: string };
+
+export async function saveProductImages(productId: string, images: GalleryImage[], removedIds: string[]) {
+  for (const id of removedIds) {
+    const { error } = await supabase.from('product_images').delete().eq('id', id);
+    if (error) throw new Error('Une photo n’a pas pu être supprimée.');
+  }
+  for (const [index, image] of images.entries()) {
+    const row = { product_id: productId, storage_path: image.storage_path, public_url: image.public_url, alt_text: image.alt_text, display_order: index, is_main: index === 0 };
+    const { error } = image.id ? await supabase.from('product_images').update(row).eq('id', image.id) : await supabase.from('product_images').insert(row);
+    if (error) throw new Error('Une photo n’a pas pu être enregistrée.');
+  }
+}
+
+// --- Saisons d'une création ---
+
+export async function fetchProductSeasonIds(productId: string) {
+  const { data, error } = await supabase.from('product_seasons').select('season_id').eq('product_id', productId);
+  if (error) throw new Error('Impossible de charger les saisons de la création.');
+  return (data ?? []).map((row) => row.season_id as string);
+}
+
+export async function saveProductSeasons(productId: string, seasonIds: string[]) {
+  const { error } = await supabase.from('product_seasons').delete().eq('product_id', productId);
+  if (error) throw new Error('Les saisons n’ont pas pu être enregistrées.');
+  if (seasonIds.length) {
+    const { error: insertError } = await supabase.from('product_seasons').insert(seasonIds.map((season_id) => ({ product_id: productId, season_id })));
+    if (insertError) throw new Error('Les saisons n’ont pas pu être enregistrées.');
+  }
+}
+
+export async function setProductFlag(id: string, flag: 'published' | 'featured', value: boolean) {
+  const { error } = await supabase.from('products').update({ [flag]: value }).eq('id', id);
+  if (error) throw new Error('La modification n’a pas pu être enregistrée.');
+}
+
+// --- Matières ---
+
+export type MaterialRow = { id: string; slug: string; name: string; description: string; image: string | null; display_order: number; published: boolean };
+
+export async function fetchAdminMaterials() {
+  const { data, error } = await supabase.from('materials').select('*').order('display_order');
+  if (error) throw new Error('Impossible de charger les matières.');
+  return (data ?? []) as MaterialRow[];
+}
+
+export async function saveMaterial(material: Partial<MaterialRow> & { name: string }) {
+  const { id, ...rest } = material;
+  const payload = { ...rest, name: rest.name.trim(), slug: slugify(rest.slug || rest.name) };
+  const result = id ? await supabase.from('materials').update(payload).eq('id', id).select().maybeSingle() : await supabase.from('materials').insert(payload).select().maybeSingle();
+  if (result.error || !result.data) throw new Error('La matière n’a pas pu être enregistrée.');
+  return result.data as MaterialRow;
+}
+
+export async function deleteMaterial(id: string) {
+  const { error } = await supabase.from('materials').delete().eq('id', id);
+  if (error) throw new Error('La matière n’a pas pu être supprimée.');
+}
+
+// --- Réglages (coordonnées, réseaux) ---
+
+export async function fetchSettings(keys: string[]) {
+  const { data, error } = await supabase.from('site_settings').select('setting_key,setting_value').in('setting_key', keys);
+  if (error) throw new Error('Impossible de charger les paramètres.');
+  return Object.fromEntries((data ?? []).map((row) => [row.setting_key, typeof row.setting_value === 'string' ? row.setting_value : ''])) as Record<string, string>;
+}
+
+export async function saveSettings(values: Record<string, string>) {
+  const rows = Object.entries(values).map(([setting_key, value]) => ({ setting_key, setting_value: value.trim(), is_public: true }));
+  const { error } = await supabase.from('site_settings').upsert(rows, { onConflict: 'setting_key' });
+  if (error) throw new Error('Les paramètres n’ont pas pu être enregistrés.');
+}
+
+// --- Textes du site ---
+
+export async function fetchTexts() {
+  const { data, error } = await supabase.from('site_contents').select('page,section,content_key,value');
+  if (error) throw new Error('Impossible de charger les textes.');
+  return Object.fromEntries((data ?? []).map((row) => [`${row.page}.${row.section}.${row.content_key}`, typeof row.value === 'string' ? row.value : ''])) as Record<string, string>;
+}
+
+function splitKey(key: string) {
+  const [page, section, ...rest] = key.split('.');
+  return { page, section, content_key: rest.join('.') };
+}
+
+export async function saveText(key: string, value: string, multiline = false) {
+  const { error } = await supabase.from('site_contents').upsert({ ...splitKey(key), content_type: multiline ? 'textarea' : 'text', value }, { onConflict: 'page,section,content_key' });
+  if (error) throw new Error('Le texte n’a pas pu être enregistré.');
+}
+
+/** Supprime le texte personnalisé : le site affiche de nouveau le texte d'origine. */
+export async function resetText(key: string) {
+  const { page, section, content_key } = splitKey(key);
+  const { error } = await supabase.from('site_contents').delete().eq('page', page).eq('section', section).eq('content_key', content_key);
+  if (error) throw new Error('Le texte n’a pas pu être réinitialisé.');
 }

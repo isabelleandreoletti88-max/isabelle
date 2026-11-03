@@ -101,3 +101,30 @@ Aucun faux panier ni faux paiement n’est simulé dans cette version.
 
 - Site : https://atelier-isabelle.fr, hébergé chez Hostinger (fichiers de `dist/` dans `public_html`, avec `public/.htaccess` pour les routes React Router).
 - Base de données : projet Supabase `siteweb` (`clkkasnnbiktrrncabjc`). `supabase/schema-siteweb.sql` est la structure consolidée appliquée lors de la migration depuis Bolt ; les fichiers de `supabase/migrations/` sont l'historique d'origine.
+
+## Ce qui se modifie depuis l'administration (/admin)
+
+| Section | Contenu |
+|---|---|
+| Demandes | Messages reçus par les formulaires, statut, notes, réponse par e-mail |
+| Créations | Fiche complète, galerie de plusieurs photos (ordre, photo principale, description), saisons, matières, publication, coup de cœur, titre et description Google |
+| Catégories, Saisons | Collections de la boutique et saisons |
+| Matières | Photo, nom et texte des matières (accueil, page L'atelier) |
+| Bannière d'accueil | Diapositives du carrousel |
+| Événements et boutiques | Marchés et boutiques partenaires (page Événements et page Contact), avec photo et lien |
+| Images du site | Logos, image de partage, photos des sections, images des saisons |
+| Textes du site | Titres et paragraphes des pages (liste dans `src/config/editableContent.ts`) |
+| Pages légales, Paramètres | Informations légales ; coordonnées, réseaux, texte du pied de page |
+
+Les photos importées sont converties en WebP et nommées d'après la création pour le référencement.
+
+## Mise en ligne
+
+`npm run build:seo` compile le site puis pré-génère chaque page publique (titres, descriptions,
+données structurées lisibles sans JavaScript), `sitemap.xml` et `robots.txt` à partir du catalogue.
+Il nécessite Playwright (`npm install --no-save playwright` puis `npx playwright install chromium`).
+
+Le workflow GitHub `.github/workflows/deploy.yml` l'exécute à chaque modification de `main`, chaque nuit
+et à la demande, puis publie le résultat sur la branche `deploy`, que Hostinger met en ligne
+automatiquement. Les changements faits dans l'administration sont visibles immédiatement sur le site ;
+la reconstruction de nuit met à jour les pages pré-générées et le plan du site.

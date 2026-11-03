@@ -137,6 +137,8 @@ export type EventRow = {
   start_date: string | null;
   end_date: string | null;
   is_permanent: boolean;
+  /** Lien facultatif : site de la boutique, page Facebook de l'événement… */
+  link_url: string | null;
   display_order: number;
   published: boolean;
 };

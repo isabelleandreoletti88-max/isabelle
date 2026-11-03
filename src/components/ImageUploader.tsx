@@ -9,9 +9,11 @@ type Props = {
   folder?: string;
   label?: string;
   shape?: 'square' | 'wide';
+  /** Nom donné au fichier (référencement), par exemple le nom de la matière. */
+  baseName?: string;
 };
 
-export default function ImageUploader({ value, onChange, bucket = 'site-images', folder = 'library', label = 'Image', shape = 'square' }: Props) {
+export default function ImageUploader({ value, onChange, bucket = 'site-images', folder = 'library', label = 'Image', shape = 'square', baseName = '' }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,7 +21,7 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
     setUploading(true);
     setError('');
     try {
-      const uploaded = await uploadImage(file, bucket, folder);
+      const uploaded = await uploadImage(file, bucket, folder, baseName);
       onChange(uploaded.url);
     } catch {
       setError('L\u2019image n\u2019a pas pu \u00eatre import\u00e9e.');

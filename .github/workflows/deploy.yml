@@ -1,0 +1,59 @@
+# Compile le site (avec pré-génération SEO) et le publie sur la branche « deploy »,
+# que Hostinger met en ligne automatiquement.
+#
+# - à chaque modification du code (branche main) ;
+# - chaque nuit, pour intégrer les créations, textes et images modifiés depuis
+#   l'administration (pages pré-générées et sitemap.xml à jour) ;
+# - à la demande : onglet Actions > « Mise en ligne du site » > Run workflow.
+name: Mise en ligne du site
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Clé publique (« anon ») : elle figure déjà dans le site publié, ce n'est pas un secret.
+      VITE_SUPABASE_URL: https://clkkasnnbiktrrncabjc.supabase.co
+      VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsa2thc25uYmlrdHJybmNhYmpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNjk3MDIsImV4cCI6MjEwODY0NTcwMn0.2-wxw41IpxH6YF-At6Mre3-Ky827_u4bpcapuyLrTP8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm install --no-save playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:seo
+
+      - name: Publication sur la branche deploy
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          git fetch origin deploy
+          git worktree add ../site origin/deploy
+          cd ../site
+          git checkout -B deploy
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$GITHUB_WORKSPACE/dist/." .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Aucun changement à publier."
+            exit 0
+          fi
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -m "Site compilé pour Hostinger (généré depuis main $SHA)"
+          git push origin deploy

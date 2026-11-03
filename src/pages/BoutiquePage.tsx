@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react';
 import { usePublicCategories, usePublicCreations } from '@/lib/publicCatalog';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/structuredData';
 import { metaDescription } from '@/lib/seo';
+import { useSiteTexts } from '@/lib/siteData';
 import SEO from '@/components/SEO';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionTitle from '@/components/SectionTitle';
@@ -26,6 +27,7 @@ export function BoutiquePage() {
   });
   const { creations, loading, error } = usePublicCreations();
   const { categories } = usePublicCategories();
+  const text = useSiteTexts();
   const activeCategory = category === 'all' ? undefined : categories.find((cat) => cat.slug === category);
 
   const filters: FilterState = useMemo(() => ({ ...localFilters, category }), [localFilters, category]);
@@ -82,8 +84,8 @@ export function BoutiquePage() {
           <SectionTitle
             as="h1"
             eyebrow={activeCategory ? 'Collection' : 'La boutique'}
-            title={activeCategory ? activeCategory.name.trim() : "Les créations de l'atelier"}
-            subtitle={activeCategory?.description || "Chaque pièce est réalisée à la main, en petite quantité. Trouvez celle qui vous ressemble ou offrez-la à quelqu'un que vous aimez."}
+            title={activeCategory ? activeCategory.name.trim() : text('boutique.entete.titre')}
+            subtitle={activeCategory?.description || text('boutique.entete.texte')}
           />
           <div className="mt-12">
             {loading && <p className="mb-6 text-sm text-wood-deep/60">Chargement des créations…</p>}
