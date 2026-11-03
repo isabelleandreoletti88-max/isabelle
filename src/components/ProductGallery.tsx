@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { thumbUrl } from '@/lib/seo';
 
 interface ProductGalleryProps {
   images: string[];
@@ -13,41 +15,60 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
   const next = () => setActive((i) => (i + 1) % images.length);
   const prev = () => setActive((i) => (i - 1 + images.length) % images.length);
 
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox(false);
+      if (e.key === 'ArrowRight') setActive((i) => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') setActive((i) => (i - 1 + images.length) % images.length);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox, images.length]);
+
   return (
     <>
       <div className="space-y-3">
         {/* Image principale */}
         <button
           onClick={() => setLightbox(true)}
-          className="block w-full rounded-soft overflow-hidden bg-beige/30 group relative"
+          className="block w-full rounded-soft-lg overflow-hidden bg-sand-light group relative shadow-card cursor-zoom-in"
           aria-label="Agrandir l'image"
         >
-          <div className="aspect-square">
-            <img
-              src={images[active]}
-              alt={alt}
-              className="w-full h-full object-cover"
-              loading="eager"
-            />
+          <div className="relative aspect-square">
+            <AnimatePresence initial={false}>
+              <motion.img
+                key={images[active]}
+                src={images[active]}
+                alt={alt}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </AnimatePresence>
           </div>
-          <span className="absolute top-3 right-3 p-2 rounded-full bg-off-white/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="absolute top-3 right-3 p-2.5 rounded-full bg-off-white/95 shadow-soft opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
             <ZoomIn className="h-4 w-4 text-wood-deep" />
           </span>
         </button>
 
         {/* Miniatures */}
         {images.length > 1 && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
             {images.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}
-                className={`w-16 h-16 rounded-soft overflow-hidden border-2 transition-colors ${
-                  active === i ? 'border-terracotta' : 'border-transparent hover:border-wood-deep/20'
+                className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-soft overflow-hidden ring-offset-2 ring-offset-cream transition-all ${
+                  active === i ? 'ring-2 ring-terracotta' : 'opacity-70 hover:opacity-100'
                 }`}
-                aria-label={`Image ${i + 1}`}
+                aria-label={`Afficher la vue ${i + 1}`}
+                aria-current={active === i}
               >
-                <img src={img} alt={`${alt} — vue ${i + 1}`} className="w-full h-full object-cover" />
+                <img src={thumbUrl(img)} alt="" className="w-full h-full object-cover" loading="lazy" />
               </button>
             ))}
           </div>

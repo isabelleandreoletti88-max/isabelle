@@ -19,7 +19,7 @@ export default function Footer() {
             <img
               src={images.logo}
               alt={`Logo ${siteConfig.name}`}
-              className="h-12 w-auto mb-4 brightness-0 invert"
+              className="h-20 w-20 mb-5 rounded-full bg-cream p-1 object-contain shadow-soft"
             />
             <p className="font-script text-xl text-honey-light mb-2">{settings.slogan}</p>
             <p className="text-sm text-cream/70 leading-relaxed">

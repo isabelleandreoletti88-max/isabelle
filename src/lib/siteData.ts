@@ -70,6 +70,7 @@ export const settingsSource = cached(async () => {
     // Une valeur vide garde la valeur par défaut, sauf pour Instagram (facultatif).
     if (typeof value === 'string' && (value.trim() || row.setting_key === 'instagram')) settings[row.setting_key as keyof SiteSettings] = value.trim();
   }
+  settings.email = settings.email.toLowerCase();
   return settings;
 });
 

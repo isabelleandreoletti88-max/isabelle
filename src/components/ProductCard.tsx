@@ -1,16 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import type { Creation } from '@/types';
 import { materialLabels, seasonLabels } from '@/config/catalog';
 import { formatPrice } from '@/lib/seo';
 import { thumbUrl } from '@/lib/seo';
-
-const badgeStyles: Record<string, string> = {
-  personnalisable: 'badge-terracotta',
-  'piece-unique': 'badge-sage',
-  nouveaute: 'badge-wood',
-  'petite-serie': 'badge-sage',
-};
 
 const badgeLabels: Record<string, string> = {
   personnalisable: 'Personnalisable',
@@ -19,80 +11,64 @@ const badgeLabels: Record<string, string> = {
   'petite-serie': 'Petite série',
 };
 
+const badgeDots: Record<string, string> = {
+  personnalisable: 'bg-terracotta',
+  'piece-unique': 'bg-sage-dark',
+  nouveaute: 'bg-honey',
+  'petite-serie': 'bg-sage',
+};
+
 export default function ProductCard({ creation }: { creation: Creation }) {
+  const badge = creation.badges[0];
   return (
-    <article className="card group flex flex-col hover:-translate-y-1 hover:shadow-[0_12px_40px_-10px_rgba(45,27,14,0.25)] border border-honey/15">
-      <Link to={`/creations/${creation.slug}`} className="block relative overflow-hidden">
-        <div className="aspect-square overflow-hidden bg-gradient-to-br from-sand/30 to-honey/20">
-          <img
-            src={thumbUrl(creation.mainImage)}
-            alt={creation.mainImageAlt}
-            width={640}
-            height={640}
-            loading="lazy"
-            decoding="async"
-            onError={(e) => { if (e.currentTarget.src !== creation.mainImage) e.currentTarget.src = creation.mainImage; }}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        </div>
-        {/* Badges */}
-        {creation.badges.length > 0 && (
-          <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-            {creation.badges.map((b) => (
-              <span key={b} className={badgeStyles[b]}>
-                {badgeLabels[b]}
-              </span>
-            ))}
-          </div>
+    <article className="group relative flex h-full flex-col">
+      <div className="relative aspect-square overflow-hidden rounded-soft-lg bg-sand-light shadow-soft transition-shadow duration-500 group-hover:shadow-card-hover">
+        <img
+          src={thumbUrl(creation.mainImage)}
+          alt={creation.mainImageAlt}
+          width={640}
+          height={640}
+          loading="lazy"
+          decoding="async"
+          onError={(e) => { if (e.currentTarget.src !== creation.mainImage) e.currentTarget.src = creation.mainImage; }}
+          className="h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+        />
+        {badge && (
+          <span className="absolute left-2.5 top-2.5 sm:left-3 sm:top-3 inline-flex items-center gap-1.5 rounded-pill bg-off-white/95 px-2.5 py-1 text-[0.7rem] sm:text-xs font-medium text-wood-deep shadow-soft">
+            <span className={`h-1.5 w-1.5 rounded-full ${badgeDots[badge] || 'bg-terracotta'}`} aria-hidden="true" />
+            {badgeLabels[badge]}
+          </span>
         )}
-      </Link>
+        {creation.availability === 'sold' && (
+          <span className="absolute right-2.5 top-2.5 sm:right-3 sm:top-3 rounded-pill bg-wood-deep/85 px-2.5 py-1 text-[0.7rem] sm:text-xs font-medium text-off-white">Vendue</span>
+        )}
+      </div>
 
-      <div className="flex flex-col flex-1 p-3 sm:p-5">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <h3 className="text-[0.95rem] sm:text-lg font-medium text-wood-deep leading-snug">
-            <Link to={`/creations/${creation.slug}`} className="block py-1 hover:text-terracotta transition-colors">
-              {creation.name}
-            </Link>
-          </h3>
-        </div>
-
-        <p className="hidden sm:block text-sm text-wood-deep/60 leading-relaxed mb-3 line-clamp-2">
-          {creation.shortDescription}
+      <div className="flex flex-1 flex-col pt-3 sm:pt-4">
+        <h3 className="font-serif text-[1.05rem] sm:text-xl leading-snug text-wood-deep">
+          {/* Le lien couvre toute la carte (pseudo-élément) : une seule cible, nom lisible par les lecteurs d'écran. */}
+          <Link to={`/creations/${creation.slug}`} className="after:absolute after:inset-0 after:content-[''] after:rounded-soft-lg group-hover:text-terracotta transition-colors focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-terracotta">
+            {creation.name}
+          </Link>
+        </h3>
+        <p className="mt-1 hidden sm:block text-sm text-wood-deep/60 leading-relaxed">
+          <span className="line-clamp-2">{creation.shortDescription}</span>
         </p>
-
-        {/* Matériaux */}
-        <div className="hidden sm:flex flex-wrap gap-1.5 mb-4">
-          {creation.materials.map((m) => (
-            <span key={m} className="text-xs text-wood-deep/50">
-              {materialLabels[m] || m}
-            </span>
-          ))}
-          {creation.seasons.length > 0 && (
-            <span className="text-xs text-sage-dark">
-              · {creation.seasons.map((s) => seasonLabels[s]).join(', ')}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-auto flex items-center justify-between gap-3">
-          <span className="text-base sm:text-lg font-medium text-wood-deep">
+        <div className="mt-auto flex items-baseline justify-between gap-3 pt-2 sm:pt-3">
+          <span className="text-[0.95rem] sm:text-base font-medium text-wood-deep tabular-nums">
             {creation.price !== null ? (
               <>
-                {creation.priceFrom && <span className="text-sm text-wood-deep/50">À partir de </span>}
+                {creation.priceFrom && <span className="text-xs sm:text-sm font-normal text-wood-deep/55">dès </span>}
                 {formatPrice(creation.price)}
               </>
             ) : (
-              <span className="text-sm text-wood-deep/50">Sur demande</span>
+              <span className="text-sm font-normal text-wood-deep/55">Prix sur demande</span>
             )}
           </span>
-          <Link
-            to={`/creations/${creation.slug}`}
-            className="hidden sm:inline-flex btn-ghost text-sm group/btn"
-            aria-label={`Voir la création ${creation.name}`}
-          >
-            Voir la création
-            <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-0.5" />
-          </Link>
+          <span className="hidden sm:inline text-xs text-wood-deep/50 truncate">
+            {creation.materials.map((m) => materialLabels[m] || m).join(' · ')}
+            {creation.seasons.length > 0 && ` · ${creation.seasons.map((s) => seasonLabels[s]).join(', ')}`}
+          </span>
         </div>
       </div>
     </article>

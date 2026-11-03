@@ -17,6 +17,7 @@ export interface Category {
   name: string;
   description: string;
   emoji: string;
+  image?: string;
 }
 
 export interface Creation {

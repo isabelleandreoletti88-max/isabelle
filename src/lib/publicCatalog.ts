@@ -93,7 +93,7 @@ export function usePublicCategories() {
     let active = true;
     fetchCategories().then((rows) => {
       if (!active) return;
-      setCategories((rows as CategoryRow[]).map((r) => ({ slug: r.slug as Category['slug'], name: r.name, description: r.description, emoji: '✨' })));
+      setCategories((rows as CategoryRow[]).map((r) => ({ slug: r.slug as Category['slug'], name: r.name, description: r.description, emoji: '', image: r.image_url || undefined })));
     }).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);

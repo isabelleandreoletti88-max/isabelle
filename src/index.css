@@ -18,6 +18,28 @@
   h1, h2, h3, h4 {
     @apply font-serif;
     line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Barre de défilement et curseur aux couleurs de l'atelier */
+  html {
+    scrollbar-color: #C9A27A transparent;
+    accent-color: #C95F3A;
+    caret-color: #C95F3A;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #D9BC92; border-radius: 999px; border: 2px solid #FBF3E4; }
+  ::-webkit-scrollbar-thumb:hover { background: #B5651D; }
+
+  a { text-underline-offset: 0.2em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 
   :focus-visible {
