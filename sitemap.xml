@@ -71,6 +71,31 @@
     <priority>0.1</priority>
   </url>
   <url>
+    <loc>https://atelier-isabelle.fr/conditions-generales-de-vente</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/livraison</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/retours-remboursements</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/droit-de-retractation</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/formulaire-retractation</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.1</priority>
+  </url>
+  <url>
     <loc>https://atelier-isabelle.fr/collections/naissance-enfance</loc>
     <lastmod>2026-08-24</lastmod>
     <priority>0.8</priority>
