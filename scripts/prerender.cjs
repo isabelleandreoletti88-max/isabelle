@@ -56,11 +56,14 @@ async function fetchCatalog(env) {
     if (!res.ok) throw new Error(`Supabase ${query}: ${res.status}`);
     return res.json();
   };
-  const [products, categories] = await Promise.all([
-    get('products?select=slug,updated_at,product_images(public_url,alt_text,is_main)&published=eq.true'),
-    get('categories?select=slug,updated_at,products(id)&published=eq.true&products.published=eq.true'),
+  const [products, categories, faqs, settings, shops] = await Promise.all([
+    get('products?select=slug,name,short_description,price,availability_status,updated_at,categories(name),product_images(public_url,alt_text,is_main)&published=eq.true&order=name'),
+    get('categories?select=slug,name,description,updated_at,products(id)&published=eq.true&products.published=eq.true&order=display_order'),
+    get('faqs?select=question,answer&published=eq.true&order=display_order'),
+    get('site_settings?select=setting_key,setting_value&is_public=eq.true'),
+    get('events?select=title,location,description,is_permanent&published=eq.true&order=display_order'),
   ]);
-  return { products, categories: categories.filter((c) => c.products.length) };
+  return { products, categories: categories.filter((c) => c.products.length), faqs, settings: Object.fromEntries(settings.map((r) => [r.setting_key, r.setting_value])), shops };
 }
 
 /** Petit serveur statique avec repli sur l'application (comme le .htaccess en production). */
@@ -89,7 +92,7 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   // Coquille vide de l'application, servie pour les adresses sans page pré-générée.
   fs.writeFileSync(path.join(DIST, 'spa.html'), shell);
 
-  const { products, categories } = await fetchCatalog(env);
+  const { products, categories, faqs, settings, shops } = await fetchCatalog(env);
   const routes = [
     ...STATIC_ROUTES,
     ...categories.map((c) => ({ path: `/collections/${c.slug}`, priority: '0.8', lastmod: c.updated_at })),
@@ -132,7 +135,36 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     '  </url>',
   ].filter(Boolean).join('\n'));
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join('\n')}\n</urlset>\n`);
-  fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+  // Les robots des moteurs IA (ChatGPT, Claude, Perplexity, Gemini…) sont explicitement les bienvenus.
+  const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Bingbot'];
+  fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /merci\n\n${aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\nDisallow: /admin\n`).join('\n')}\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+
+  // llms.txt : résumé factuel du site pour les assistants IA (format https://llmstxt.org).
+  const euro = (n) => `${Number(n).toFixed(2).replace('.', ',').replace(',00', '')} €`;
+  const permanent = shops.filter((s) => s.is_permanent);
+  const llms = [
+    `# ${settings.brand_name || "L'Atelier d'Isabelle"}`,
+    '',
+    `> Créatrice artisanale installée dans les Vosges (Grand Est, France). Isabelle imagine et fabrique à la main des décorations et des cadeaux personnalisables en galets, papier, bois et fil de fer : cadres avec une phrase, créations de naissance, famille, amitié, amour, remerciements et décorations de saison.`,
+    '',
+    '## L’essentiel',
+    `- Lieu : Vosges (${settings.city || "Saint-Dié-des-Vosges et Raon-l'Étape"}).`,
+    ...permanent.map((s) => `- Créations visibles toute l’année à ${s.title}, ${s.location}.`),
+    '- Créations faites main, pièces uniques ou petites séries, personnalisables (prénom, date, message, couleurs).',
+    settings.email ? `- Contact : ${String(settings.email).toLowerCase()}${settings.phone ? `, ${settings.phone}` : ''} ; formulaire : ${SITE_URL}/contact` : `- Contact : ${SITE_URL}/contact`,
+    `- Demande de création personnalisée : ${SITE_URL}/personnalisation`,
+    `- Marchés et boutiques : ${SITE_URL}/evenements`,
+    '',
+    '## Collections',
+    ...categories.map((c) => `- [${c.name.trim()}](${SITE_URL}/collections/${c.slug}) : ${c.description}`),
+    '',
+    '## Créations',
+    ...products.map((p) => `- [${p.name.trim()}](${SITE_URL}/creations/${p.slug})${p.categories?.name ? ` (${p.categories.name.trim()})` : ''}${p.price ? ` — ${euro(p.price)}` : ' — prix sur demande'}${p.availability_status === 'sold' ? ' — vendue' : ''} : ${String(p.short_description || '').replace(/\s+/g, ' ').trim()}`),
+    '',
+    '## Questions fréquentes',
+    ...faqs.flatMap((f) => [`### ${f.question}`, f.answer, '']),
+  ].join('\n');
+  fs.writeFileSync(path.join(DIST, 'llms.txt'), `${llms}\n`);
 
   console.log(`\n${rendered.length} pages pré-générées, sitemap.xml (${routes.length} adresses) et robots.txt écrits.`);
 })().catch((error) => {

@@ -40,6 +40,9 @@ export type SiteSettings = {
   facebook: string;
   instagram: string;
   footer_text: string;
+  shop_enabled: string;
+  shop_shipping_fee: string;
+  shop_shipping_note: string;
 };
 
 export const settingsDefaults: SiteSettings = {
@@ -53,6 +56,9 @@ export const settingsDefaults: SiteSettings = {
   facebook: siteConfig.facebook,
   instagram: siteConfig.instagram,
   footer_text: 'Créations décoratives faites main, au rythme des saisons.',
+  shop_enabled: 'false',
+  shop_shipping_fee: '',
+  shop_shipping_note: '',
 };
 
 export const settingsSource = cached(async () => {
@@ -97,4 +103,18 @@ export const materialsSource = cached(async () => {
 
 export function useMaterials() {
   return useCached(materialsSource, defaultMaterials);
+}
+
+// --- Questions fréquentes (table faqs) ---
+
+export type Faq = { id: string; question: string; answer: string };
+
+export const faqsSource = cached(async () => {
+  const { data, error } = await supabase.from('faqs').select('id,question,answer').eq('published', true).order('display_order');
+  if (error) throw error;
+  return (data ?? []) as Faq[];
+});
+
+export function useFaqs() {
+  return useCached(faqsSource, [] as Faq[]);
 }

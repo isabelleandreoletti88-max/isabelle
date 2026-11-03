@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { BarChart3, ChevronRight, Star, Layers, Type, Scale, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar } from 'lucide-react';
+import { BarChart3, ChevronRight, HelpCircle, ShoppingBag, Star, Layers, Type, Scale, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { deleteCategory, deleteSeason, fetchAdminProducts, fetchAdminStats, fetchCategories, fetchSeasons, saveCategory, saveSeason, fetchHeroSlides, saveHeroSlide, deleteHeroSlide, type HeroSlideRow, fetchAdminEvents, saveEvent, deleteEvent, type EventRow } from '@/lib/catalogService';
 import { fetchSiteImages, saveSiteImage, type SiteImageKey } from '@/lib/siteImages';
-import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
-import { ProductGalleryEditor } from '@/adminPages';
+import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, syncProductWithStripe, archiveProductInStripe, fetchProductStripeState, type ProductStripeState, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
+import { ProductGalleryEditor, ShopPanel } from '@/adminPages';
 import { supabase } from '@/lib/supabase';
-import { metaDescription, slugify, thumbUrl } from '@/lib/seo';
+import { formatPrice, metaDescription, slugify, thumbUrl } from '@/lib/seo';
 import { saveLegalDocument, saveLegalSettings, type LegalDocument } from '@/lib/legalService';
 import ImageUploader from '@/components/ImageUploader';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
@@ -19,6 +19,7 @@ type SimpleRow = { id: string; name: string; slug: string; description?: string;
 const nav = [
   { path: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/admin/demandes', label: 'Demandes', icon: Inbox },
+  { path: '/admin/commandes', label: 'Commandes', icon: ShoppingBag },
   { path: '/admin/creations', label: 'Créations', icon: Package },
   { path: '/admin/categories', label: 'Catégories', icon: Tags },
   { path: '/admin/saisons', label: 'Saisons', icon: BarChart3 },
@@ -27,6 +28,7 @@ const nav = [
   { path: '/admin/evenements', label: 'Événements et boutiques', icon: Calendar },
   { path: '/admin/images', label: 'Images du site', icon: ImagePlus },
   { path: '/admin/contenus', label: 'Textes du site', icon: Type },
+  { path: '/admin/questions', label: 'Questions fréquentes', icon: HelpCircle },
   { path: '/admin/medias', label: 'Médiathèque', icon: FileText },
   { path: '/admin/legal', label: 'Pages légales', icon: Scale },
   { path: '/admin/parametres', label: 'Paramètres', icon: Settings },
@@ -38,11 +40,11 @@ export function AdminLogin() { const { session, signIn, resetPassword } = useAut
 // Affiché après un lien d'invitation ou de réinitialisation (/admin/login?reset=1) : la session existe déjà, il reste à choisir le mot de passe.
 function AdminSetPassword() { const { updatePassword } = useAuth(); const navigate = useNavigate(); const [password, setPassword] = useState(''); const [confirm, setConfirm] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false); async function submit(e: FormEvent) { e.preventDefault(); setError(''); if (password.length < 8) { setError('Le mot de passe doit contenir au moins 8 caractères.'); return; } if (password !== confirm) { setError('Les deux mots de passe ne correspondent pas.'); return; } setSaving(true); const result = await updatePassword(password); setSaving(false); if (result.error) setError(result.error); else navigate('/admin', { replace: true }); } return <div className="min-h-screen bg-cream flex items-center justify-center p-4"><div className="w-full max-w-md bg-off-white rounded-soft shadow-card p-8"><img src="/logo-atelier-isabelle.png" alt="L’Atelier d’Isabelle" className="h-20 w-auto mx-auto object-contain mb-6" /><h1 className="text-2xl text-center font-medium">Choisir votre mot de passe</h1><p className="text-center text-sm text-wood-deep/60 mt-2">Il vous servira à vous connecter à l’administration de l’atelier.</p><form onSubmit={submit} className="mt-8 space-y-4"><label className="block"><span className="label-field">Nouveau mot de passe</span><input className="input-field" type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} /></label><label className="block"><span className="label-field">Confirmer le mot de passe</span><input className="input-field" type="password" autoComplete="new-password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} /></label>{error && <p className="text-sm text-red-700" role="alert">{error}</p>}<button className="btn-primary w-full" disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer et accéder à l’administration'}</button></form></div></div>; }
 
-export function AdminLayout() { const { profile, signOut } = useAuth(); const location = useLocation(); const [open, setOpen] = useState(false); return <div className="min-h-screen bg-cream"><aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-wood-deep text-cream transform transition-transform lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}><div className="h-full flex flex-col p-5"><div className="flex items-center justify-between mb-8"><img src="/logo-atelier-isabelle.png" alt="L’Atelier d’Isabelle" className="h-16 w-auto object-contain brightness-0 invert" /><button className="lg:hidden" onClick={() => setOpen(false)} aria-label="Fermer"><X /></button></div><p className="text-xs uppercase tracking-wider text-beige mb-3">Espace privé</p><nav className="space-y-1 flex-1">{nav.map(({ path, label, icon: Icon }) => <Link key={path} to={path} onClick={() => setOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-soft text-sm transition-colors ${location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path)) ? 'bg-terracotta text-off-white' : 'text-cream/75 hover:bg-cream/10 hover:text-cream'}`}><Icon className="h-4 w-4" />{label}</Link>)}</nav><div className="border-t border-cream/10 pt-4"><p className="text-sm text-cream/80 truncate">{profile?.full_name || profile?.email}</p><p className="text-xs text-cream/50 mt-1 capitalize">{profile?.role}</p><Link to="/admin/login?reset=1" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta mt-4"><Settings className="h-4 w-4" />Changer mon mot de passe</Link><button onClick={() => void signOut()} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta mt-4"><LogOut className="h-4 w-4" />Déconnexion</button></div></div></aside><div className="lg:pl-72"><header className="h-16 bg-off-white border-b border-wood-deep/10 flex items-center px-4 sm:px-8 sticky top-0 z-40"><button className="lg:hidden mr-4" onClick={() => setOpen(true)} aria-label="Ouvrir le menu"><Menu /></button><Link to="/" className="text-sm text-wood-deep/60 hover:text-terracotta">Voir le site</Link></header><main className="p-4 sm:p-8 max-w-7xl mx-auto"><Outlet /></main></div></div>; }
+export function AdminLayout() { const { profile, signOut } = useAuth(); const location = useLocation(); const [open, setOpen] = useState(false); return <div className="min-h-screen bg-cream">{open && <button className="lg:hidden fixed inset-0 z-40 bg-wood-deep/40" aria-label="Fermer le menu" onClick={() => setOpen(false)} />}<aside className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-wood-deep text-cream transform transition-transform lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}><div className="h-full flex flex-col p-5"><div className="flex items-center justify-between mb-8"><img src="/logo-atelier-isabelle.png" alt="L’Atelier d’Isabelle" className="h-16 w-auto object-contain brightness-0 invert" /><button className="lg:hidden h-11 w-11 -mr-2 inline-flex items-center justify-center" onClick={() => setOpen(false)} aria-label="Fermer"><X /></button></div><p className="text-xs uppercase tracking-wider text-beige mb-3">Espace privé</p><nav className="space-y-1 flex-1">{nav.map(({ path, label, icon: Icon }) => <Link key={path} to={path} onClick={() => setOpen(false)} className={`flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-soft text-sm transition-colors ${location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path)) ? 'bg-terracotta text-off-white' : 'text-cream/75 hover:bg-cream/10 hover:text-cream'}`}><Icon className="h-4 w-4" />{label}</Link>)}</nav><div className="border-t border-cream/10 pt-4"><p className="text-sm text-cream/80 truncate">{profile?.full_name || profile?.email}</p><p className="text-xs text-cream/50 mt-1 capitalize">{profile?.role}</p><Link to="/admin/login?reset=1" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta mt-2 py-3"><Settings className="h-4 w-4" />Changer mon mot de passe</Link><button onClick={() => void signOut()} className="flex items-center gap-2 text-sm text-cream/70 hover:text-terracotta py-3"><LogOut className="h-4 w-4" />Déconnexion</button></div></div></aside><div className="lg:pl-72"><header className="h-16 bg-off-white border-b border-wood-deep/10 flex items-center px-4 sm:px-8 sticky top-0 z-40"><button className="lg:hidden mr-2 -ml-2 h-11 w-11 inline-flex items-center justify-center" onClick={() => setOpen(true)} aria-label="Ouvrir le menu"><Menu /></button><Link to="/" className="text-sm text-wood-deep/60 hover:text-terracotta py-3">Voir le site</Link></header><main className="p-4 sm:p-8 pb-28 max-w-7xl mx-auto"><Outlet /></main></div></div>; }
 
 function AdminLoading() { return <div className="min-h-screen bg-cream flex items-center justify-center text-wood-deep/60">Chargement de votre espace…</div>; }
 
-export function AdminDashboard() { const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, unavailable: 0, requests: 0 }); const [recent, setRecent] = useState<AdminRequestRow[]>([]); const [error, setError] = useState(''); useEffect(() => { fetchAdminStats().then(setStats).catch(() => setError('Les statistiques ne sont pas disponibles pour le moment.')); fetchRequests().then((rows) => setRecent((rows as AdminRequestRow[]).slice(0, 5))).catch(() => {}); }, []); const cards = [['Créations', stats.total, 'total'], ['Publiées', stats.published, 'en ligne'], ['Brouillons', stats.drafts, 'à finaliser'], ['Indisponibles', stats.unavailable, 'vendues ou masquées'], ['Nouvelles demandes', stats.requests, 'à traiter']]; return <><AdminTitle title="Tableau de bord" description="Retrouvez l’essentiel de votre atelier en un coup d'œil." action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Ajouter une création</Link>} />{error && <Notice text={error} error />}{!error && <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">{cards.map(([label, value, hint]) => <div key={String(label)} className="bg-off-white rounded-soft p-5 shadow-soft"><p className="text-sm text-wood-deep/60">{label}</p><p className="text-3xl font-medium mt-2">{value}</p><p className="text-xs text-sage mt-1">{hint}</p></div>)}</div>}<div className="mt-10 grid lg:grid-cols-2 gap-6"><div className="bg-off-white rounded-soft p-6"><h2 className="text-xl font-medium mb-4">Accès rapides</h2><div className="grid sm:grid-cols-2 gap-3"><Link to="/admin/creations/nouvelle" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Plus className="h-5 w-5 text-terracotta mb-2" />Nouvelle création</Link><Link to="/admin/demandes" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Inbox className="h-5 w-5 text-terracotta mb-2" />Voir les demandes</Link><Link to="/admin/contenus" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Type className="h-5 w-5 text-terracotta mb-2" />Modifier les textes du site</Link><Link to="/admin/images" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><ImagePlus className="h-5 w-5 text-terracotta mb-2" />Changer les images du site</Link></div></div><div className="bg-off-white rounded-soft p-6"><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-medium">Dernières demandes</h2><Link to="/admin/demandes" className="text-sm text-terracotta hover:underline">Tout voir</Link></div>{recent.length === 0 ? <p className="text-sm text-wood-deep/60">Aucune demande pour le moment.</p> : <ul className="divide-y divide-wood-deep/10">{recent.map((item) => <li key={item.id} className="py-3 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-sm font-medium truncate">{item.first_name} {item.last_name} — {item.subject}</p><p className="text-xs text-wood-deep/50">{new Date(item.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p></div>{item.status === 'new' && <span className="badge-terracotta shrink-0">Nouvelle</span>}</li>)}</ul>}</div></div></>; }
+export function AdminDashboard() { const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, unavailable: 0, requests: 0 }); const [recent, setRecent] = useState<AdminRequestRow[]>([]); const [error, setError] = useState(''); useEffect(() => { fetchAdminStats().then(setStats).catch(() => setError('Les statistiques ne sont pas disponibles pour le moment.')); fetchRequests().then((rows) => setRecent((rows as AdminRequestRow[]).slice(0, 5))).catch(() => {}); }, []); const cards = [['Créations', stats.total, 'total'], ['Publiées', stats.published, 'en ligne'], ['Brouillons', stats.drafts, 'à finaliser'], ['Indisponibles', stats.unavailable, 'vendues ou masquées'], ['Nouvelles demandes', stats.requests, 'à traiter']]; return <><AdminTitle title="Tableau de bord" description="Retrouvez l’essentiel de votre atelier en un coup d'œil." action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Ajouter une création</Link>} />{error && <Notice text={error} error />}{!error && <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4">{cards.map(([label, value, hint]) => <div key={String(label)} className="bg-off-white rounded-soft p-5 shadow-soft"><p className="text-sm text-wood-deep/60">{label}</p><p className="text-3xl font-medium mt-2">{value}</p><p className="text-xs text-sage mt-1">{hint}</p></div>)}</div>}<div className="mt-10 grid lg:grid-cols-2 gap-6"><div className="bg-off-white rounded-soft p-6"><h2 className="text-xl font-medium mb-4">Accès rapides</h2><div className="grid sm:grid-cols-2 gap-3"><Link to="/admin/creations/nouvelle" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Plus className="h-5 w-5 text-terracotta mb-2" />Nouvelle création</Link><Link to="/admin/demandes" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Inbox className="h-5 w-5 text-terracotta mb-2" />Voir les demandes</Link><Link to="/admin/contenus" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><Type className="h-5 w-5 text-terracotta mb-2" />Modifier les textes du site</Link><Link to="/admin/images" className="rounded-soft border border-wood-deep/10 p-4 hover:border-terracotta text-sm"><ImagePlus className="h-5 w-5 text-terracotta mb-2" />Changer les images du site</Link></div></div><div className="bg-off-white rounded-soft p-6"><div className="flex items-center justify-between mb-4"><h2 className="text-xl font-medium">Dernières demandes</h2><Link to="/admin/demandes" className="text-sm text-terracotta hover:underline py-3 -my-3">Tout voir</Link></div>{recent.length === 0 ? <p className="text-sm text-wood-deep/60">Aucune demande pour le moment.</p> : <ul className="divide-y divide-wood-deep/10">{recent.map((item) => <li key={item.id} className="py-3 flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-sm font-medium truncate">{item.first_name} {item.last_name} — {item.subject}</p><p className="text-xs text-wood-deep/50">{new Date(item.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</p></div>{item.status === 'new' && <span className="badge-terracotta shrink-0">Nouvelle</span>}</li>)}</ul>}</div></div></>; }
 
 export function AdminProducts() {
   const [products, setProducts] = useState<AdminProductRow[]>([]);
@@ -60,34 +62,48 @@ export function AdminProducts() {
   async function toggle(product: AdminProductRow, flag: 'published' | 'featured') {
     try {
       await setProductFlag(product.id, flag, !product[flag]);
+      if (flag === 'published') void syncProductWithStripe(product.id).catch(() => {});
       setProducts((all) => all.map((p) => p.id === product.id ? { ...p, [flag]: !product[flag] } : p));
     } catch { setError('La modification n’a pas pu être enregistrée.'); }
   }
-  async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } }
+  async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await archiveProductInStripe(id).catch(() => {}); await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } }
   const mainImage = (p: AdminProductRow) => [...(p.product_images || [])].sort((a, b) => Number(b.is_main) - Number(a.is_main) || a.display_order - b.display_order)[0];
   return <>
     <AdminTitle title="Créations" description={`${products.length} créations, dont ${products.filter((p) => p.published).length} publiées.`} action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Nouvelle création</Link>} />
     {error && <Notice text={error} error />}
-    <div className="bg-off-white rounded-soft p-4 mb-5 flex flex-wrap gap-3 items-center">
-      <input className="input-field max-w-xs" placeholder="Rechercher une création…" value={query} onChange={(e) => setQuery(e.target.value)} />
-      <select className="input-field max-w-[200px]" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}><option value="all">Tous les statuts</option><option value="published">Publiées</option><option value="draft">Brouillons</option><option value="featured">Coups de cœur</option></select>
-      <select className="input-field max-w-[240px]" value={category} onChange={(e) => setCategory(e.target.value)}><option value="all">Toutes les catégories</option>{categoryNames.map((name) => <option key={name} value={name}>{name}</option>)}</select>
+    <div className="bg-off-white rounded-soft p-4 mb-5 grid sm:flex sm:flex-wrap gap-3 sm:items-center">
+      <input className="input-field sm:max-w-xs" placeholder="Rechercher une création…" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <select className="input-field sm:max-w-[200px]" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}><option value="all">Tous les statuts</option><option value="published">Publiées</option><option value="draft">Brouillons</option><option value="featured">Coups de cœur</option></select>
+      <select className="input-field sm:max-w-[240px]" value={category} onChange={(e) => setCategory(e.target.value)}><option value="all">Toutes les catégories</option>{categoryNames.map((name) => <option key={name} value={name}>{name}</option>)}</select>
       <span className="text-sm text-wood-deep/60">{filtered.length} résultat{filtered.length > 1 ? 's' : ''}</span>
     </div>
-    <div className="bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm">
+    <ul className="md:hidden space-y-3">{filtered.map((p) => { const image = mainImage(p); return <li key={p.id} className="bg-off-white rounded-soft shadow-soft p-3 flex gap-3">
+      <Link to={`/admin/creations/${p.id}`} className="shrink-0">{image ? <img src={thumbUrl(image.public_url)} alt="" className="h-20 w-20 rounded-soft object-cover" loading="lazy" /> : <span className="h-20 w-20 rounded-soft bg-beige/40 flex items-center justify-center text-wood-deep/30"><ImagePlus className="h-6 w-6" /></span>}</Link>
+      <div className="min-w-0 flex-1">
+        <Link to={`/admin/creations/${p.id}`} className="block font-medium leading-snug">{p.name}</Link>
+        <p className="text-xs text-wood-deep/50 mt-0.5 truncate">{p.categories?.name || 'Sans catégorie'} · {p.price ? formatPrice(p.price) : 'Sur demande'}</p>
+        <div className="flex items-center gap-1 mt-2 -ml-2">
+          <button onClick={() => void toggle(p, 'published')} className={`${p.published ? 'badge-sage' : 'badge-wood'} min-h-[36px] mx-2`}>{p.published ? 'Publiée' : 'Brouillon'}</button>
+          <button onClick={() => void toggle(p, 'featured')} aria-label={p.featured ? 'Retirer des coups de cœur' : 'Ajouter aux coups de cœur'} className={`h-10 w-10 inline-flex items-center justify-center ${p.featured ? 'text-terracotta' : 'text-wood-deep/30'}`}><Star className="h-5 w-5" fill={p.featured ? 'currentColor' : 'none'} /></button>
+          <Link className="h-10 w-10 inline-flex items-center justify-center text-wood-deep/60" to={`/admin/creations/${p.id}`} aria-label={`Modifier ${p.name}`}><Pencil className="h-4 w-4" /></Link>
+          <button className="h-10 w-10 inline-flex items-center justify-center text-wood-deep/60 ml-auto" onClick={() => void remove(p.id)} aria-label={`Supprimer ${p.name}`}><Trash2 className="h-4 w-4" /></button>
+        </div>
+      </div>
+    </li>; })}{filtered.length === 0 && <li className="p-8 text-center text-wood-deep/60">Aucune création trouvée.</li>}</ul>
+    <div className="hidden md:block bg-off-white rounded-soft shadow-soft overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm">
       <thead className="bg-beige/30"><tr><th className="text-left p-4">Création</th><th className="text-left p-4">Prix</th><th className="text-left p-4">Publiée</th><th className="text-left p-4">Coup de cœur</th><th className="text-right p-4">Actions</th></tr></thead>
       <tbody>{filtered.map((p) => { const image = mainImage(p); return <tr key={p.id} className="border-t border-wood-deep/10">
         <td className="p-4"><Link to={`/admin/creations/${p.id}`} className="flex items-center gap-3 group">{image ? <img src={thumbUrl(image.public_url)} alt="" className="h-12 w-12 rounded object-cover" loading="lazy" /> : <span className="h-12 w-12 rounded bg-beige/40 flex items-center justify-center text-wood-deep/30"><ImagePlus className="h-5 w-5" /></span>}<div><p className="font-medium group-hover:text-terracotta">{p.name}</p><p className="text-xs text-wood-deep/50">{p.categories?.name || 'Sans catégorie'} · {(p.product_images || []).length} photo{(p.product_images || []).length > 1 ? 's' : ''}</p></div></Link></td>
-        <td className="p-4 whitespace-nowrap">{p.price ? `${p.price} €` : 'Sur demande'}</td>
-        <td className="p-4"><button onClick={() => void toggle(p, 'published')} className={p.published ? 'badge-sage' : 'badge-wood'} title="Cliquer pour changer">{p.published ? 'Publiée' : 'Brouillon'}</button></td>
-        <td className="p-4"><button onClick={() => void toggle(p, 'featured')} aria-label={p.featured ? 'Retirer des coups de cœur' : 'Ajouter aux coups de cœur'} className={p.featured ? 'text-terracotta' : 'text-wood-deep/25 hover:text-terracotta'}><Star className="h-5 w-5" fill={p.featured ? 'currentColor' : 'none'} /></button></td>
-        <td className="p-4"><div className="flex justify-end gap-1">{p.published && <a className="p-2 text-wood-deep/60 hover:text-terracotta" href={`/creations/${p.slug}`} target="_blank" rel="noreferrer" aria-label={`Voir ${p.name} sur le site`}><Eye className="h-4 w-4" /></a>}<Link className="p-2 text-wood-deep/60 hover:text-terracotta" to={`/admin/creations/${p.id}`} aria-label={`Modifier ${p.name}`}><Pencil className="h-4 w-4" /></Link><button className="p-2 text-wood-deep/60 hover:text-red-700" onClick={() => void remove(p.id)} aria-label={`Supprimer ${p.name}`}><Trash2 className="h-4 w-4" /></button></div></td>
+        <td className="p-4 whitespace-nowrap">{p.price ? formatPrice(p.price) : 'Sur demande'}</td>
+        <td className="p-4"><button onClick={() => void toggle(p, 'published')} className={`${p.published ? 'badge-sage' : 'badge-wood'} min-h-[36px]`} title="Cliquer pour changer">{p.published ? 'Publiée' : 'Brouillon'}</button></td>
+        <td className="p-4"><button onClick={() => void toggle(p, 'featured')} aria-label={p.featured ? 'Retirer des coups de cœur' : 'Ajouter aux coups de cœur'} className={`h-10 w-10 inline-flex items-center justify-center ${p.featured ? 'text-terracotta' : 'text-wood-deep/25 hover:text-terracotta'}`}><Star className="h-5 w-5" fill={p.featured ? 'currentColor' : 'none'} /></button></td>
+        <td className="p-4"><div className="flex justify-end gap-1">{p.published && <a className="p-3 text-wood-deep/60 hover:text-terracotta" href={`/creations/${p.slug}`} target="_blank" rel="noreferrer" aria-label={`Voir ${p.name} sur le site`}><Eye className="h-4 w-4" /></a>}<Link className="p-3 text-wood-deep/60 hover:text-terracotta" to={`/admin/creations/${p.id}`} aria-label={`Modifier ${p.name}`}><Pencil className="h-4 w-4" /></Link><button className="p-3 text-wood-deep/60 hover:text-red-700" onClick={() => void remove(p.id)} aria-label={`Supprimer ${p.name}`}><Trash2 className="h-4 w-4" /></button></div></td>
       </tr>; })}</tbody>
     </table>{filtered.length === 0 && <p className="p-8 text-center text-wood-deep/60">Aucune création trouvée.</p>}</div></div>
   </>;
 }
 
-const emptyProduct: ProductInput = { name: '', slug: '', short_description: '', description: '', price: null, price_from: false, compare_at_price: null, category_id: null, materials: [], dimensions: '', colors: [], personalizable: false, availability_status: 'made_to_order', stock_quantity: null, production_time: '', maintenance_advice: '', featured: false, published: false, display_order: 0, seo_title: '', seo_description: '' };
+const emptyProduct: ProductInput = { name: '', slug: '', short_description: '', description: '', price: null, price_from: false, compare_at_price: null, category_id: null, materials: [], dimensions: '', colors: [], personalizable: false, availability_status: 'made_to_order', stock_quantity: null, production_time: '', maintenance_advice: '', featured: false, published: false, display_order: 0, seo_title: '', seo_description: '', sell_online: false };
 const materialOptions = ['Galet', 'Papier', 'Bois', 'Fil de fer'];
 
 export function AdminProductForm() {
@@ -102,6 +118,8 @@ export function AdminProductForm() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [shopMessage, setShopMessage] = useState('');
+  const [stripeState, setStripeState] = useState<ProductStripeState | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setError('Impossible de charger les catégories.'));
@@ -115,6 +133,7 @@ export function AdminProductForm() {
         }
       });
       fetchProductImages(id).then(setImages).catch(() => setError('Impossible de charger les photos.'));
+      fetchProductStripeState(id).then(setStripeState).catch(() => {});
       fetchProductSeasonIds(id).then(setSeasonIds).catch(() => setError('Impossible de charger les saisons de la création.'));
     }
   }, [id]);
@@ -140,6 +159,17 @@ export function AdminProductForm() {
       setImages(await fetchProductImages(product.id));
       setValue((v) => ({ ...v, slug: product.slug }));
       setSaved(true);
+      // Synchronisation Stripe : produit, prix et lien de paiement suivent la fiche.
+      setShopMessage('');
+      if (value.sell_online || stripeState?.stripe_product_id) {
+        try {
+          const result = await syncProductWithStripe(product.id);
+          if (result.reason === 'not_configured') setShopMessage('La boutique en ligne n’est pas encore reliée à Stripe : la création est enregistrée, la vente en ligne sera activée dès la connexion.');
+        } catch (syncError) {
+          setShopMessage(`La création est enregistrée, mais la vente en ligne n’a pas pu être mise à jour : ${(syncError as Error).message}`);
+        }
+        setStripeState(await fetchProductStripeState(product.id));
+      }
       if (!id) navigate(`/admin/creations/${product.id}`);
     } catch {
       setError('La création n’a pas pu être enregistrée.');
@@ -149,13 +179,14 @@ export function AdminProductForm() {
   }
 
   const slugPreview = slugify(value.slug || value.name);
-  const seoTitle = value.seo_title || `${value.name || 'Nom de la création'} – Décoration faite main | L'Atelier d'Isabelle`;
+  const seoTitle = value.seo_title || `${value.name || 'Nom de la création'} – Fait main dans les Vosges | L'Atelier d'Isabelle`;
   const seoDescription = value.seo_description || value.short_description || value.description;
 
   return <>
     <AdminTitle title={id ? 'Modifier une création' : 'Nouvelle création'} description="Les informations peuvent être complétées et modifiées à tout moment." action={id && value.published ? <a href={`/creations/${slugPreview}`} target="_blank" rel="noreferrer" className="btn-secondary"><Eye className="h-4 w-4" />Voir sur le site</a> : undefined} />
     {error && <Notice text={error} error />}
     {saved && <Notice text="La création a bien été enregistrée." />}
+    {shopMessage && <Notice text={shopMessage} error />}
     <form onSubmit={submit} className="space-y-6 pb-20">
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -195,6 +226,7 @@ export function AdminProductForm() {
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.price_from} onChange={(e) => update('price_from', e.target.checked)} /> Afficher « À partir de »</label>
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.personalizable} onChange={(e) => update('personalizable', e.target.checked)} /> Personnalisable</label>
           </Panel>
+          <ShopPanel sellOnline={value.sell_online} onChange={(next) => update('sell_online', next)} state={stripeState} price={value.price} availability={value.availability_status} published={value.published} />
           <Panel title="Référencement Google">
             <p className="text-xs text-wood-deep/60 mb-4">Facultatif : laissés vides, le titre et la description sont créés automatiquement.</p>
             <Field label={`Titre (${value.seo_title.length}/60)`}><input className="input-field" placeholder={seoTitle} value={value.seo_title} onChange={(e) => update('seo_title', e.target.value)} /></Field>
@@ -208,7 +240,7 @@ export function AdminProductForm() {
           </Panel>
         </div>
       </div>
-      <div className="fixed bottom-0 right-0 left-0 lg:left-72 bg-off-white border-t border-wood-deep/10 p-3 flex justify-end gap-3">
+      <div className="fixed bottom-0 right-0 left-0 lg:left-72 z-30 bg-off-white border-t border-wood-deep/10 px-3 pt-3 safe-bottom flex justify-end gap-3 [&>*]:flex-1 sm:[&>*]:flex-none">
         <Link to="/admin/creations" className="btn-secondary">Retour à la liste</Link>
         <button className="btn-primary" disabled={saving}><Check className="h-4 w-4" />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
       </div>

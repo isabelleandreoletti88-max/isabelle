@@ -20,9 +20,9 @@ export const siteConfig = {
   logo: '/logo-atelier-isabelle.png',
   headerLogo: '/logo-atelier-isabelle-header.webp',
   defaultSeo: {
-    title: "L'Atelier d'Isabelle — Créations artisanales faites main",
+    title: "L'Atelier d'Isabelle — Décorations et cadeaux faits main dans les Vosges",
     description:
-      "Décorations faites main en galets, papier, bois et fil de fer, réalisées au rythme des saisons. Créations personnalisables pour vos plus beaux moments.",
+      "Décorations et cadeaux faits main dans les Vosges (Saint-Dié, Raon-l'Étape) : galets, papier, bois et fil de fer, personnalisables pour chaque moment de vie.",
   },
 } as const;
 

@@ -24,6 +24,8 @@ export type ProductInput = {
   display_order: number;
   seo_title: string;
   seo_description: string;
+  /** Vendue en ligne : produit, prix et lien de paiement Stripe créés automatiquement. */
+  sell_online: boolean;
 };
 
 export async function saveProduct(input: ProductInput) {
@@ -249,4 +251,73 @@ export async function resetText(key: string) {
   const { page, section, content_key } = splitKey(key);
   const { error } = await supabase.from('site_contents').delete().eq('page', page).eq('section', section).eq('content_key', content_key);
   if (error) throw new Error('Le texte n’a pas pu être réinitialisé.');
+}
+
+// --- Boutique en ligne (Stripe, via la fonction serveur stripe-sync) ---
+
+export type StripeStatus = { configured: boolean; mode?: 'test' | 'live'; account?: string; charges_enabled?: boolean; shop_enabled?: boolean; error?: string };
+export type StripeSyncResult = { sellable?: boolean; url?: string; skipped?: boolean; reason?: string; error?: string; synced?: number; errors?: number };
+
+async function stripeAction<T>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke('stripe-sync', { body });
+  if (error) {
+    // Message renvoyé par la fonction (ex. erreur Stripe), sinon message générique.
+    const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    throw new Error(detail?.error || 'La boutique en ligne ne répond pas pour le moment.');
+  }
+  return data as T;
+}
+
+export const fetchStripeStatus = () => stripeAction<StripeStatus>({ action: 'status' });
+export const syncProductWithStripe = (productId: string) => stripeAction<StripeSyncResult>({ action: 'sync', product_id: productId });
+export const archiveProductInStripe = (productId: string) => stripeAction<StripeSyncResult>({ action: 'archive', product_id: productId });
+export const syncAllWithStripe = () => stripeAction<StripeSyncResult>({ action: 'sync_all' });
+
+export type ProductStripeState = { sell_online: boolean; stripe_payment_link_url: string | null; stripe_synced_at: string | null; stripe_sync_error: string | null; stripe_product_id: string | null };
+
+export async function fetchProductStripeState(productId: string) {
+  const { data } = await supabase.from('products').select('sell_online,stripe_payment_link_url,stripe_synced_at,stripe_sync_error,stripe_product_id').eq('id', productId).maybeSingle();
+  return data as ProductStripeState | null;
+}
+
+// --- Commandes ---
+
+export type OrderRow = {
+  id: string; product_id: string | null; product_name: string; quantity: number; amount_total: number; shipping_amount: number; currency: string;
+  customer_name: string | null; customer_email: string | null; customer_phone: string | null;
+  shipping_address: { line1?: string; line2?: string; postal_code?: string; city?: string; country?: string } | null;
+  status: 'paid' | 'preparing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'; admin_notes: string | null; created_at: string;
+};
+
+export async function fetchOrders() {
+  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+  if (error) throw new Error('Impossible de charger les commandes.');
+  return (data ?? []) as OrderRow[];
+}
+
+export async function updateOrder(id: string, values: Partial<Pick<OrderRow, 'status' | 'admin_notes'>>) {
+  const { error } = await supabase.from('orders').update(values).eq('id', id);
+  if (error) throw new Error('La commande n’a pas pu être mise à jour.');
+}
+
+// --- Questions fréquentes ---
+
+export type FaqRow = { id: string; question: string; answer: string; display_order: number; published: boolean };
+
+export async function fetchAdminFaqs() {
+  const { data, error } = await supabase.from('faqs').select('*').order('display_order');
+  if (error) throw new Error('Impossible de charger les questions.');
+  return (data ?? []) as FaqRow[];
+}
+
+export async function saveFaq(faq: Partial<FaqRow> & { question: string; answer: string }) {
+  const { id, ...payload } = faq;
+  const result = id ? await supabase.from('faqs').update(payload).eq('id', id).select().maybeSingle() : await supabase.from('faqs').insert(payload).select().maybeSingle();
+  if (result.error || !result.data) throw new Error('La question n’a pas pu être enregistrée.');
+  return result.data as FaqRow;
+}
+
+export async function deleteFaq(id: string) {
+  const { error } = await supabase.from('faqs').delete().eq('id', id);
+  if (error) throw new Error('La question n’a pas pu être supprimée.');
 }

@@ -3,7 +3,7 @@ import { Suspense, lazy, useEffect } from 'react';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage } from '@/pages';
+import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage, ThankYouPage } from '@/pages';
 import { BoutiquePage } from '@/pages/BoutiquePage';
 import { EventsPage } from '@/pages/EventsPage';
 // L'administration et les pages légales sont chargées à la demande : le site public reste léger.
@@ -38,6 +38,8 @@ const adminPages = () => import('@/adminPages');
 const AdminSettings = lazy(() => adminPages().then((m) => ({ default: m.AdminSettings })));
 const AdminTexts = lazy(() => adminPages().then((m) => ({ default: m.AdminTexts })));
 const AdminMaterials = lazy(() => adminPages().then((m) => ({ default: m.AdminMaterials })));
+const AdminOrders = lazy(() => adminPages().then((m) => ({ default: m.AdminOrders })));
+const AdminFaqs = lazy(() => adminPages().then((m) => ({ default: m.AdminFaqs })));
 
 function AdminNoIndex() {
   return <><SEO title="Administration | L'Atelier d'Isabelle" noindex /><Outlet /></>;
@@ -50,7 +52,10 @@ function ScrollToTop() {
 }
 
 function SiteLayout() {
-  return <><ScrollToTop /><Header /><Outlet /><Footer /><a href="/contact" className="lg:hidden fixed bottom-4 right-4 z-40 btn-primary shadow-card text-sm">Contacter Isabelle</a></>;
+  const { pathname } = useLocation();
+  // Masqué sur les pages qui ont déjà un bouton de contact ou d'achat, pour ne pas cacher le contenu.
+  const showContact = !/^\/(creations\/|contact|personnalisation|merci)/.test(pathname);
+  return <><ScrollToTop /><Header /><Outlet /><Footer />{showContact && <a href="/contact" className="lg:hidden fixed right-4 z-40 btn-primary shadow-card text-sm" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>Contacter Isabelle</a>}</>;
 }
 
 function App() {
@@ -69,8 +74,10 @@ function App() {
       <Route path="/admin/images" element={<AdminSiteImages />} />
       <Route path="/admin/contenus" element={<AdminTexts />} />
       <Route path="/admin/matieres" element={<AdminMaterials />} />
+      <Route path="/admin/questions" element={<AdminFaqs />} />
       <Route path="/admin/medias" element={<AdminSimplePage title="Médiathèque" kind="medias" />} />
       <Route path="/admin/demandes" element={<AdminRequests />} />
+      <Route path="/admin/commandes" element={<AdminOrders />} />
       <Route path="/admin/legal" element={<AdminLegal />} />
       <Route path="/admin/parametres" element={<AdminSettings />} />
     </Route></Route>
@@ -86,6 +93,7 @@ function App() {
       <Route path="/personnalisation" element={<PersonalisationPage />} />
       <Route path="/a-propos" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/merci" element={<ThankYouPage />} />
       <Route path="/favoris" element={<NotFoundPage />} />
       <Route path="/panier" element={<NotFoundPage />} />
       <Route path="/informations-legales" element={<LegalHubPage />} />

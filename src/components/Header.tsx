@@ -80,10 +80,10 @@ export default function Header() {
 
           {/* Burger mobile */}
           <div className="flex lg:hidden items-center gap-1">
-            <button onClick={() => setSearchOpen((v) => !v)} className="p-2 text-wood-deep hover:text-terracotta transition-colors" aria-label="Rechercher">
+            <button onClick={() => setSearchOpen((v) => !v)} className="h-11 w-11 inline-flex items-center justify-center text-wood-deep hover:text-terracotta transition-colors" aria-label="Rechercher">
               <Search className="h-5 w-5" />
             </button>
-            <button className="p-2 -mr-2 text-wood-deep hover:text-terracotta transition-colors" onClick={() => setMobileOpen((v) => !v)} aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={mobileOpen} aria-controls="mobile-menu">
+            <button className="h-11 w-11 -mr-2 inline-flex items-center justify-center text-wood-deep hover:text-terracotta transition-colors" onClick={() => setMobileOpen((v) => !v)} aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={mobileOpen} aria-controls="mobile-menu">
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>

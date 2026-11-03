@@ -32,7 +32,7 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-soft px-6 py-3 text-sm font-medium transition-all duration-300 ease-smooth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 rounded-soft px-6 py-3 min-h-[44px] text-sm font-medium transition-all duration-300 ease-smooth focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
@@ -68,7 +68,7 @@
   }
 
   .input-field {
-    @apply w-full rounded-soft border border-wood/20 bg-off-white px-4 py-2.5 text-sm text-wood-deep placeholder:text-wood/40 focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta transition-colors duration-200;
+    @apply w-full min-h-[44px] rounded-soft border border-wood/20 bg-off-white px-4 py-2.5 text-base sm:text-sm text-wood-deep placeholder:text-wood/40 focus:border-terracotta focus:outline-none focus:ring-1 focus:ring-terracotta transition-colors duration-200;
   }
 
   .label-field {
@@ -172,4 +172,19 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Écrans tactiles : cases à cocher et boutons radio assez grands pour le doigt. */
+@media (pointer: coarse) {
+  input[type='checkbox']:not(.sr-only),
+  input[type='radio']:not(.sr-only) {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Barres fixées en bas d'écran : respect de la zone du geste d'accueil (iPhone). */
+.safe-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }

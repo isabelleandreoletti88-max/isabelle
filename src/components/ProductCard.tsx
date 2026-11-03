@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { Creation } from '@/types';
 import { materialLabels, seasonLabels } from '@/config/catalog';
+import { formatPrice } from '@/lib/seo';
 import { thumbUrl } from '@/lib/seo';
 
 const badgeStyles: Record<string, string> = {
@@ -46,24 +47,24 @@ export default function ProductCard({ creation }: { creation: Creation }) {
         )}
       </Link>
 
-      <div className="flex flex-col flex-1 p-5">
+      <div className="flex flex-col flex-1 p-3 sm:p-5">
         <div className="flex items-start justify-between gap-2 mb-1.5">
-          <h3 className="text-lg font-medium text-wood-deep leading-snug">
-            <Link to={`/creations/${creation.slug}`} className="hover:text-terracotta transition-colors">
+          <h3 className="text-[0.95rem] sm:text-lg font-medium text-wood-deep leading-snug">
+            <Link to={`/creations/${creation.slug}`} className="block py-1 hover:text-terracotta transition-colors">
               {creation.name}
             </Link>
           </h3>
         </div>
 
-        <p className="text-sm text-wood-deep/60 leading-relaxed mb-3 line-clamp-2">
+        <p className="hidden sm:block text-sm text-wood-deep/60 leading-relaxed mb-3 line-clamp-2">
           {creation.shortDescription}
         </p>
 
         {/* Matériaux */}
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="hidden sm:flex flex-wrap gap-1.5 mb-4">
           {creation.materials.map((m) => (
             <span key={m} className="text-xs text-wood-deep/50">
-              {materialLabels[m]}
+              {materialLabels[m] || m}
             </span>
           ))}
           {creation.seasons.length > 0 && (
@@ -74,11 +75,11 @@ export default function ProductCard({ creation }: { creation: Creation }) {
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-3">
-          <span className="text-lg font-medium text-wood-deep">
+          <span className="text-base sm:text-lg font-medium text-wood-deep">
             {creation.price !== null ? (
               <>
                 {creation.priceFrom && <span className="text-sm text-wood-deep/50">À partir de </span>}
-                {creation.price} €
+                {formatPrice(creation.price)}
               </>
             ) : (
               <span className="text-sm text-wood-deep/50">Sur demande</span>
@@ -86,7 +87,7 @@ export default function ProductCard({ creation }: { creation: Creation }) {
           </span>
           <Link
             to={`/creations/${creation.slug}`}
-            className="btn-ghost text-sm group/btn"
+            className="hidden sm:inline-flex btn-ghost text-sm group/btn"
             aria-label={`Voir la création ${creation.name}`}
           >
             Voir la création

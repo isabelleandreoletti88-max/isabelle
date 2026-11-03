@@ -30,8 +30,12 @@ export function useFormSubmission() {
 
       try {
         if (!formConfig.endpoint) {
-          const { error } = await supabase.from('contact_requests').insert(data);
+          // L'identifiant est créé ici : les visiteurs ne peuvent pas relire les demandes enregistrées.
+          const id = crypto.randomUUID();
+          const { error } = await supabase.from('contact_requests').insert({ ...data, id });
           if (error) throw new Error('request_failed');
+          // Prévient Isabelle par e-mail ; la demande est enregistrée même si l'envoi échoue.
+          void supabase.functions.invoke('notify-request', { body: { id } }).catch(() => {});
           setStatus('success');
           return;
         }

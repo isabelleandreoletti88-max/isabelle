@@ -80,10 +80,10 @@ export default function ProductFilters({
       </div>
 
       {/* Filtres */}
-      <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           onClick={() => onChange({ ...filters, category: 'all' })}
-          className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
+          className={`shrink-0 snap-start whitespace-nowrap min-h-[40px] px-4 py-2 rounded-full text-sm font-medium transition-colors ${
             filters.category === 'all'
               ? 'bg-terracotta text-off-white'
               : 'bg-beige/40 text-wood-deep hover:bg-beige/70'
@@ -95,7 +95,7 @@ export default function ProductFilters({
           <button
             key={cat.slug}
             onClick={() => onChange({ ...filters, category: cat.slug })}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`shrink-0 snap-start whitespace-nowrap min-h-[40px] px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               filters.category === cat.slug
                 ? 'bg-terracotta text-off-white'
                 : 'bg-beige/40 text-wood-deep hover:bg-beige/70'
@@ -108,7 +108,7 @@ export default function ProductFilters({
 
       {/* Personnalisable */}
       <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-        <label className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-beige/40 text-wood-deep cursor-pointer hover:bg-beige/70 transition-colors">
+        <label className="flex items-center gap-2 min-h-[40px] px-4 py-2 rounded-full text-sm font-medium bg-beige/40 text-wood-deep cursor-pointer hover:bg-beige/70 transition-colors">
           <input
             type="checkbox"
             checked={filters.customizableOnly}

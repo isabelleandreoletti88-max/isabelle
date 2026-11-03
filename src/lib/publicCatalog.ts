@@ -16,6 +16,7 @@ type ProductRow = {
   seo_description: string;
   created_at: string;
   updated_at: string;
+  stripe_payment_link_url: string | null;
   materials: string[];
   dimensions: string;
   colors: string[];
@@ -62,6 +63,7 @@ function mapProduct(row: ProductRow): Creation {
     seoDescription: row.seo_description || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    buyUrl: row.stripe_payment_link_url,
     gallery: images.length ? images.map((image) => image.public_url) : ['/creation-artisanale-atelier-isabelle.webp'],
     leadTime: row.production_time,
     careInstructions: row.maintenance_advice,

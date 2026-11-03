@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Calendar, ExternalLink, MapPin } from 'lucide-react';
 import SEO from '@/components/SEO';
 import { useSiteSettings, useSiteTexts } from '@/lib/siteData';
-import { breadcrumbJsonLd } from '@/lib/structuredData';
+import { breadcrumbJsonLd, eventJsonLd } from '@/lib/structuredData';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionTitle from '@/components/SectionTitle';
 import CallToAction from '@/components/CallToAction';
@@ -37,7 +37,7 @@ export function EventsPage() {
 
   return (
     <>
-      <SEO title="Événements et marchés artisanaux dans les Vosges | L'Atelier d'Isabelle" description="Retrouvez les créations d'Isabelle dans ses boutiques partenaires à Saint-Dié-des-Vosges et Raon-l'Étape, et sur les marchés de créateurs des Vosges." jsonLd={breadcrumbJsonLd([{ name: 'Événements', path: '/evenements' }])} />
+      <SEO title="Événements et marchés artisanaux dans les Vosges | L'Atelier d'Isabelle" description="Retrouvez les créations d'Isabelle dans ses boutiques partenaires à Saint-Dié-des-Vosges et Raon-l'Étape, et sur les marchés de créateurs des Vosges." jsonLd={[breadcrumbJsonLd([{ name: 'Événements', path: '/evenements' }]), ...temporary.filter((event) => event.start_date && (event.end_date || event.start_date) >= new Date().toISOString().slice(0, 10)).map(eventJsonLd)]} />
       <main className="pt-28 lg:pt-36">
         <div className="container-page">
           <Breadcrumb items={[{ label: 'Événements' }]} />

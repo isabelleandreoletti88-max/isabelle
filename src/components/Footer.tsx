@@ -97,7 +97,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
-                    className="p-2 rounded-soft bg-cream/10 hover:bg-terracotta transition-colors"
+                    className="h-11 w-11 inline-flex items-center justify-center rounded-soft bg-cream/10 hover:bg-terracotta transition-colors"
                   >
                     <Facebook className="h-4 w-4" />
                   </a>
@@ -108,7 +108,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"
-                    className="p-2 rounded-soft bg-cream/10 hover:bg-terracotta transition-colors"
+                    className="h-11 w-11 inline-flex items-center justify-center rounded-soft bg-cream/10 hover:bg-terracotta transition-colors"
                   >
                     <Instagram className="h-4 w-4" />
                   </a>
@@ -137,7 +137,7 @@ export default function Footer() {
             © {year} {siteConfig.name}.
           </p>
           <div className="flex items-center gap-4">
-            <Link to="/admin" className="flex items-center gap-1.5 hover:text-terracotta transition-colors">
+            <Link to="/admin" className="flex items-center gap-1.5 py-3 hover:text-terracotta transition-colors">
               <Lock className="h-3 w-3" /> Espace privé
             </Link>
             <p className="flex items-center gap-1.5">

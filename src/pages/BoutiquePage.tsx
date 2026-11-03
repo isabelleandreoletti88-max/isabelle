@@ -65,15 +65,15 @@ export function BoutiquePage() {
     <>
       {activeCategory ? (
         <SEO
-          title={`${activeCategory.name} – Créations faites main | L'Atelier d'Isabelle`}
-          description={metaDescription(`${activeCategory.description} Découvrez les créations artisanales « ${activeCategory.name} » de L'Atelier d'Isabelle, faites main dans les Vosges.`)}
+          title={`${activeCategory.name.trim()} – Cadeaux faits main dans les Vosges | L'Atelier d'Isabelle`}
+          description={metaDescription(`${activeCategory.description} Créations « ${activeCategory.name.trim()} » faites main dans les Vosges par L'Atelier d'Isabelle, personnalisables.`)}
           canonicalPath={`/collections/${activeCategory.slug}`}
           jsonLd={[breadcrumbJsonLd([{ name: 'La boutique', path: '/boutique' }, { name: activeCategory.name, path: `/collections/${activeCategory.slug}` }]), itemListJsonLd(activeCategory.name, filtered)]}
         />
       ) : (
         <SEO
-          title="La boutique – Décorations artisanales faites main | L'Atelier d'Isabelle"
-          description="Toutes les créations de L'Atelier d'Isabelle : cadres et décorations faites main en galets, papier, bois et fil de fer, personnalisables, réalisées dans les Vosges."
+          title="Boutique – Décorations et cadeaux faits main dans les Vosges | L'Atelier d'Isabelle"
+          description="Idées cadeaux et décorations faites main dans les Vosges : cadres en galets, papier, bois et fil de fer, personnalisables, pour une naissance, la famille ou l'amitié."
           canonicalPath="/boutique"
           jsonLd={[breadcrumbJsonLd([{ name: 'La boutique', path: '/boutique' }]), itemListJsonLd('La boutique', filtered)]}
         />
