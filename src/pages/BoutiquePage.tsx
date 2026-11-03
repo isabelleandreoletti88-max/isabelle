@@ -1,25 +1,44 @@
-import { useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
-import { usePublicCreations } from '@/lib/publicCatalog';
+import { usePublicCategories, usePublicCreations } from '@/lib/publicCatalog';
+import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/structuredData';
+import { metaDescription } from '@/lib/seo';
 import SEO from '@/components/SEO';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionTitle from '@/components/SectionTitle';
 import ProductGrid from '@/components/ProductGrid';
 import ProductFilters, { type FilterState } from '@/components/ProductFilters';
 import CallToAction from '@/components/CallToAction';
-import { siteConfig } from '@/config/site';
 
 export function BoutiquePage() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { slug: collectionSlug } = useParams();
   const params = new URLSearchParams(location.search);
-  const [filters, setFilters] = useState<FilterState>({
+  // La catégorie vient de l'adresse : chaque collection a sa propre page (/collections/…), indexable.
+  const category = (collectionSlug || 'all') as FilterState['category'];
+  const [localFilters, setLocalFilters] = useState<FilterState>({
     query: params.get('q') || '',
-    category: (params.get('categorie') as FilterState['category']) || 'all',
+    category,
     customizableOnly: false,
     sort: 'newest',
   });
   const { creations, loading, error } = usePublicCreations();
+  const { categories } = usePublicCategories();
+  const activeCategory = category === 'all' ? undefined : categories.find((cat) => cat.slug === category);
+
+  const filters: FilterState = useMemo(() => ({ ...localFilters, category }), [localFilters, category]);
+  function setFilters(next: FilterState) {
+    setLocalFilters(next);
+    if (next.category !== category) navigate(next.category === 'all' ? '/boutique' : `/collections/${next.category}`);
+  }
+
+  // Anciens liens /boutique?categorie=… : redirection vers la page de la collection.
+  const legacyCategory = params.get('categorie');
+  useEffect(() => {
+    if (legacyCategory && !collectionSlug) navigate(`/collections/${legacyCategory}`, { replace: true });
+  }, [legacyCategory, collectionSlug, navigate]);
 
   const availableCategorySlugs = useMemo(
     () => new Set(creations.map((c) => c.category)),
@@ -42,14 +61,29 @@ export function BoutiquePage() {
 
   return (
     <>
-      <SEO title="La boutique — L'Atelier d'Isabelle" description="Découvrez toutes les créations artisanales disponibles à la vente." />
+      {activeCategory ? (
+        <SEO
+          title={`${activeCategory.name} – Créations faites main | L'Atelier d'Isabelle`}
+          description={metaDescription(`${activeCategory.description} Découvrez les créations artisanales « ${activeCategory.name} » de L'Atelier d'Isabelle, faites main dans les Vosges.`)}
+          canonicalPath={`/collections/${activeCategory.slug}`}
+          jsonLd={[breadcrumbJsonLd([{ name: 'La boutique', path: '/boutique' }, { name: activeCategory.name, path: `/collections/${activeCategory.slug}` }]), itemListJsonLd(activeCategory.name, filtered)]}
+        />
+      ) : (
+        <SEO
+          title="La boutique – Décorations artisanales faites main | L'Atelier d'Isabelle"
+          description="Toutes les créations de L'Atelier d'Isabelle : cadres et décorations faites main en galets, papier, bois et fil de fer, personnalisables, réalisées dans les Vosges."
+          canonicalPath="/boutique"
+          jsonLd={[breadcrumbJsonLd([{ name: 'La boutique', path: '/boutique' }]), itemListJsonLd('La boutique', filtered)]}
+        />
+      )}
       <main className="pt-28 lg:pt-36">
         <div className="container-page">
-          <Breadcrumb items={[{ label: 'La boutique' }]} />
+          <Breadcrumb items={activeCategory ? [{ label: 'La boutique', path: '/boutique' }, { label: activeCategory.name }] : [{ label: 'La boutique' }]} />
           <SectionTitle
-            eyebrow="La boutique"
-            title="Les créations de l'atelier"
-            subtitle="Chaque pièce est réalisée à la main, en petite quantité. Trouvez celle qui vous ressemble ou offrez-la à quelqu'un que vous aimez."
+            as="h1"
+            eyebrow={activeCategory ? 'Collection' : 'La boutique'}
+            title={activeCategory ? activeCategory.name.trim() : "Les créations de l'atelier"}
+            subtitle={activeCategory?.description || "Chaque pièce est réalisée à la main, en petite quantité. Trouvez celle qui vous ressemble ou offrez-la à quelqu'un que vous aimez."}
           />
           <div className="mt-12">
             {loading && <p className="mb-6 text-sm text-wood-deep/60">Chargement des créations…</p>}

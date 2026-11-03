@@ -27,9 +27,9 @@ export default function Footer() {
 
           {/* Navigation */}
           <nav aria-label="Navigation pied de page">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
+            <p className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
               Navigation
-            </h2>
+            </p>
             <ul className="space-y-2.5">
               {mainNav.map((item) => (
                 <li key={item.path}>
@@ -46,9 +46,9 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
+            <p className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
               Contact
-            </h2>
+            </p>
             <ul className="space-y-3 text-sm text-cream/70">
               {siteConfig.phone && (
                 <li className="flex items-start gap-2.5">
@@ -117,9 +117,9 @@ export default function Footer() {
 
           {/* Pages légales */}
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
+            <p className="text-sm font-semibold uppercase tracking-wider text-honey-light mb-4">
               Informations légales
-            </h2>
+            </p>
             <ul className="space-y-2.5">
               <li><Link to="/informations-legales" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Informations légales</Link></li>
               <li><Link to="/mentions-legales" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Mentions légales</Link></li>

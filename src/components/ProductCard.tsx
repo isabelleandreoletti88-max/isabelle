@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { Creation } from '@/types';
 import { materialLabels, seasonLabels } from '@/config/catalog';
+import { thumbUrl } from '@/lib/seo';
 
 const badgeStyles: Record<string, string> = {
   personnalisable: 'badge-terracotta',
@@ -23,9 +24,13 @@ export default function ProductCard({ creation }: { creation: Creation }) {
       <Link to={`/creations/${creation.slug}`} className="block relative overflow-hidden">
         <div className="aspect-square overflow-hidden bg-gradient-to-br from-sand/30 to-honey/20">
           <img
-            src={creation.mainImage}
-            alt={creation.name}
+            src={thumbUrl(creation.mainImage)}
+            alt={creation.mainImageAlt}
+            width={640}
+            height={640}
             loading="lazy"
+            decoding="async"
+            onError={(e) => { if (e.currentTarget.src !== creation.mainImage) e.currentTarget.src = creation.mainImage; }}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>

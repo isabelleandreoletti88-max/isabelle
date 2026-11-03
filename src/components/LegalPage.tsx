@@ -22,7 +22,7 @@ export interface LegalPageProps {
 export function LegalPage({ title, description, breadcrumb, sections, updatedAt, printable = false }: LegalPageProps) {
   return (
     <>
-      <SEO title={`${title} — L'Atelier d'Isabelle`} description={description || title} />
+      <SEO title={`${title} | L'Atelier d'Isabelle`} description={description || `${title} du site atelier-isabelle.fr, édité par L'Atelier d'Isabelle, créatrice de décorations artisanales faites main dans les Vosges.`} />
       <main className="pt-28 lg:pt-36 pb-20">
         <div className="container-page max-w-5xl">
           <Breadcrumb items={[{ label: 'Informations légales', path: '/informations-legales' }, { label: breadcrumb }]} />

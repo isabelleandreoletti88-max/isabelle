@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Remplacé par le plan complet (créations et collections) lors de npm run build:seo. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>/</loc></url>
-  <url><loc>/creations</loc></url>
-  <url><loc>/personnalisation</loc></url>
-  <url><loc>/a-propos</loc></url>
-  <url><loc>/contact</loc></url>
-  <url><loc>/mentions-legales</loc></url>
-  <url><loc>/confidentialite</loc></url>
+  <url><loc>https://atelier-isabelle.fr/</loc></url>
+  <url><loc>https://atelier-isabelle.fr/boutique</loc></url>
+  <url><loc>https://atelier-isabelle.fr/personnalisation</loc></url>
+  <url><loc>https://atelier-isabelle.fr/a-propos</loc></url>
+  <url><loc>https://atelier-isabelle.fr/evenements</loc></url>
+  <url><loc>https://atelier-isabelle.fr/contact</loc></url>
 </urlset>

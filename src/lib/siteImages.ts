@@ -12,20 +12,20 @@ export type SiteImageKey =
   | 'about_image';
 
 const DEFAULTS: Record<SiteImageKey, string> = {
-  logo: '/logo-atelier-isabelle-transparent.png',
+  logo: '/logo-atelier-isabelle.png',
   header_logo: '/logo-atelier-isabelle-header.webp',
-  og_image: '/742951638_2150815128833604_2847242481161327155_n.jpg',
-  home_sur_mesure_image: '/758274168_2158598844721899_8142072461107233374_n.jpg',
-  home_univers_image: '/785364099_2181757785739338_4944579142739418340_n.jpg',
-  personnalisation_image: '/758274168_2158598844721899_8142072461107233374_n.jpg',
-  about_image: '/785364099_2181757785739338_4944579142739418340_n.jpg',
+  og_image: '/atelier-isabelle-creations-artisanales.webp',
+  home_sur_mesure_image: '/creation-personnalisee-sur-mesure.webp',
+  home_univers_image: '/univers-atelier-isabelle.webp',
+  personnalisation_image: '/creation-personnalisee-sur-mesure.webp',
+  about_image: '/univers-atelier-isabelle.webp',
 };
 
 export const DEFAULT_SEASON_IMAGES: Record<string, string> = {
-  printemps: '/saison-printemps.webp',
-  ete: '/saison-ete.webp',
-  automne: '/716510643_2113537999227984_4704869155250699751_n.jpg',
-  hiver: '/saison-hiver.webp',
+  printemps: '/decoration-printemps-faite-main.webp',
+  ete: '/decoration-ete-faite-main.webp',
+  automne: '/decoration-automne-galets.webp',
+  hiver: '/decoration-hiver-faite-main.webp',
 };
 
 function parseSettingValue(raw: unknown): string {

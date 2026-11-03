@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import SEO from '@/components/SEO';
+import { breadcrumbJsonLd } from '@/lib/structuredData';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionTitle from '@/components/SectionTitle';
 import CallToAction from '@/components/CallToAction';
@@ -34,11 +35,12 @@ export function EventsPage() {
 
   return (
     <>
-      <SEO title="Événements — L'Atelier d'Isabelle" description="Retrouvez Isabelle dans les boutiques partenaires et les marchés artisanaux des Vosges." />
+      <SEO title="Événements et marchés artisanaux dans les Vosges | L'Atelier d'Isabelle" description="Retrouvez les créations d'Isabelle dans ses boutiques partenaires à Saint-Dié-des-Vosges et Raon-l'Étape, et sur les marchés de créateurs des Vosges." jsonLd={breadcrumbJsonLd([{ name: 'Événements', path: '/evenements' }])} />
       <main className="pt-28 lg:pt-36">
         <div className="container-page">
           <Breadcrumb items={[{ label: 'Événements' }]} />
           <SectionTitle
+            as="h1"
             eyebrow="Événements"
             title="Retrouvez l'atelier près de chez vous"
             subtitle="Isabelle expose ses créations dans des boutiques partenaires et participe à des marchés de créateurs. Venez découvrir les pièces en vrai et échanger directement."

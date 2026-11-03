@@ -41,7 +41,7 @@ const defaultChapters: Chapter[] = [
   {
     chapter: 'Chapitre II',
     number: '02',
-    image: '/785364099_2181757785739338_4944579142739418340_n.jpg',
+    image: '/univers-atelier-isabelle.webp',
     eyebrow: 'Le geste',
     title: 'Là où les matières s’éveillent',
     poem: 'Un galet posé, un fil qui plie, un souffle de patience — chaque création commence par un silence dans les mains d’Isabelle.',
@@ -57,7 +57,7 @@ const defaultChapters: Chapter[] = [
   {
     chapter: 'Chapitre III',
     number: '03',
-    image: '/creation-garcon.webp',
+    image: '/creation-naissance-garcon-galets.webp',
     eyebrow: 'La naissance',
     title: 'Le premier souffle d’une histoire',
     poem: 'Un prénom, quelques galets tendres, un cadre qui accueille l’enfant. Une décoration pour marquer le commencement.',
@@ -73,7 +73,7 @@ const defaultChapters: Chapter[] = [
   {
     chapter: 'Chapitre IV',
     number: '04',
-    image: '/creation-famille.webp',
+    image: '/creation-famille-papier.webp',
     eyebrow: 'La famille',
     title: 'Ceux qu’on aime, assemblés en un tableau',
     poem: 'Papa, maman, grand frère, petite sœur, l’animal fidèle. Un cadre qui rassemble la tribu en une seule scène.',
@@ -89,7 +89,7 @@ const defaultChapters: Chapter[] = [
   {
     chapter: 'Chapitre V',
     number: '05',
-    image: '/creation-amitie.webp',
+    image: '/creation-amitie-papier.webp',
     eyebrow: 'L’amitié',
     title: 'Deux silhouettes, un même fil',
     poem: 'Pour dire à celle ou celui qui compte que sa place est là, entre le cœur et le mur d’en face.',
@@ -105,7 +105,7 @@ const defaultChapters: Chapter[] = [
   {
     chapter: 'Chapitre VI',
     number: '06',
-    image: '/742951638_2150815128833604_2847242481161327155_n.jpg',
+    image: '/atelier-isabelle-creations-artisanales.webp',
     eyebrow: 'Les saisons',
     title: 'Créer au rythme de la nature',
     poem: 'Printemps de renaissance, été de rencontres, automne cuivré, hiver de douceur — chaque saison a son geste et sa couleur.',
@@ -247,7 +247,7 @@ export default function HeroSlider() {
               {current.eyebrow}
             </p>
 
-            <h1
+            <h2
               key={`title-${index}`}
               className="font-serif font-light text-wood-deep animate-hero-fade"
               style={{
@@ -267,7 +267,7 @@ export default function HeroSlider() {
                   </span>
                 );
               })}
-            </h1>
+            </h2>
 
             <div key={`poem-${index}`} className="mt-6 sm:mt-8 max-w-xl animate-hero-fade">
               <p className="text-base sm:text-lg text-wood-deep/80 leading-relaxed font-light">

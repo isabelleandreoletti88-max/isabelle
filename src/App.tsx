@@ -1,12 +1,43 @@
 import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
+import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { HomePage, CreationsPage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage } from '@/pages';
+import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage } from '@/pages';
 import { BoutiquePage } from '@/pages/BoutiquePage';
 import { EventsPage } from '@/pages/EventsPage';
-import { LegalHubPage, LegalNoticePage, PrivacyPolicyPage, CookiesPolicyPage, CookieManagementPage, TermsOfUsePage, MediationPage, CommercialInfoPage, CgvPage, ShippingPage, ReturnsPage, WithdrawalPage, WithdrawalFormPage } from '@/legalPages';
-import { AdminLogin, AdminLayout, ProtectedRoute, AdminDashboard, AdminProducts, AdminProductForm, AdminRequests, AdminSimplePage, AdminLegal, AdminHeroSlides, AdminSiteImages, AdminEvents } from '@/admin';
+// L'administration et les pages légales sont chargées à la demande : le site public reste léger.
+const legal = () => import('@/legalPages');
+const admin = () => import('@/admin');
+const LegalHubPage = lazy(() => legal().then((m) => ({ default: m.LegalHubPage })));
+const LegalNoticePage = lazy(() => legal().then((m) => ({ default: m.LegalNoticePage })));
+const PrivacyPolicyPage = lazy(() => legal().then((m) => ({ default: m.PrivacyPolicyPage })));
+const CookiesPolicyPage = lazy(() => legal().then((m) => ({ default: m.CookiesPolicyPage })));
+const CookieManagementPage = lazy(() => legal().then((m) => ({ default: m.CookieManagementPage })));
+const TermsOfUsePage = lazy(() => legal().then((m) => ({ default: m.TermsOfUsePage })));
+const MediationPage = lazy(() => legal().then((m) => ({ default: m.MediationPage })));
+const CommercialInfoPage = lazy(() => legal().then((m) => ({ default: m.CommercialInfoPage })));
+const CgvPage = lazy(() => legal().then((m) => ({ default: m.CgvPage })));
+const ShippingPage = lazy(() => legal().then((m) => ({ default: m.ShippingPage })));
+const ReturnsPage = lazy(() => legal().then((m) => ({ default: m.ReturnsPage })));
+const WithdrawalPage = lazy(() => legal().then((m) => ({ default: m.WithdrawalPage })));
+const WithdrawalFormPage = lazy(() => legal().then((m) => ({ default: m.WithdrawalFormPage })));
+const AdminLogin = lazy(() => admin().then((m) => ({ default: m.AdminLogin })));
+const AdminLayout = lazy(() => admin().then((m) => ({ default: m.AdminLayout })));
+const ProtectedRoute = lazy(() => admin().then((m) => ({ default: m.ProtectedRoute })));
+const AdminDashboard = lazy(() => admin().then((m) => ({ default: m.AdminDashboard })));
+const AdminProducts = lazy(() => admin().then((m) => ({ default: m.AdminProducts })));
+const AdminProductForm = lazy(() => admin().then((m) => ({ default: m.AdminProductForm })));
+const AdminRequests = lazy(() => admin().then((m) => ({ default: m.AdminRequests })));
+const AdminSimplePage = lazy(() => admin().then((m) => ({ default: m.AdminSimplePage })));
+const AdminLegal = lazy(() => admin().then((m) => ({ default: m.AdminLegal })));
+const AdminHeroSlides = lazy(() => admin().then((m) => ({ default: m.AdminHeroSlides })));
+const AdminSiteImages = lazy(() => admin().then((m) => ({ default: m.AdminSiteImages })));
+const AdminEvents = lazy(() => admin().then((m) => ({ default: m.AdminEvents })));
+
+function AdminNoIndex() {
+  return <><SEO title="Administration | L'Atelier d'Isabelle" noindex /><Outlet /></>;
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -19,7 +50,8 @@ function SiteLayout() {
 }
 
 function App() {
-  return <BrowserRouter><Routes>
+  return <BrowserRouter><Suspense fallback={<div className="min-h-screen bg-cream" />}><Routes>
+    <Route element={<AdminNoIndex />}>
     <Route path="/admin/login" element={<AdminLogin />} />
     <Route element={<ProtectedRoute />}><Route element={<AdminLayout />}>
       <Route path="/admin" element={<AdminDashboard />} />
@@ -37,6 +69,7 @@ function App() {
       <Route path="/admin/legal" element={<AdminLegal />} />
       <Route path="/admin/parametres" element={<AdminSimplePage title="Paramètres" kind="settings" />} />
     </Route></Route>
+    </Route>
     <Route element={<SiteLayout />}>
       <Route path="/" element={<HomePage />} />
       <Route path="/boutique" element={<BoutiquePage />} />
@@ -67,7 +100,7 @@ function App() {
       <Route path="/mentions-legales-legacy" element={<LegalNoticePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Route>
-  </Routes></BrowserRouter>;
+  </Routes></Suspense></BrowserRouter>;
 }
 
 export default App;

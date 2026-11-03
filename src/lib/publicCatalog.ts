@@ -10,7 +10,12 @@ type ProductRow = {
   description: string;
   price: number | null;
   price_from: boolean;
-  categories: { slug: string } | null;
+  categories: { slug: string; name: string } | null;
+  previous_slug: string | null;
+  seo_title: string;
+  seo_description: string;
+  created_at: string;
+  updated_at: string;
   materials: string[];
   dimensions: string;
   colors: string[];
@@ -49,8 +54,15 @@ function mapProduct(row: ProductRow): Creation {
     colors: row.colors,
     customizable: row.personalizable,
     availability: row.availability_status,
-    mainImage: images[0]?.public_url || '/hero-creation.webp',
-    gallery: images.length ? images.map((image) => image.public_url) : ['/hero-creation.webp'],
+    mainImage: images[0]?.public_url || '/creation-artisanale-atelier-isabelle.webp',
+    mainImageAlt: images[0]?.alt_text || row.name,
+    categoryName: row.categories?.name?.trim() || '',
+    previousSlug: row.previous_slug,
+    seoTitle: row.seo_title || '',
+    seoDescription: row.seo_description || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    gallery: images.length ? images.map((image) => image.public_url) : ['/creation-artisanale-atelier-isabelle.webp'],
     leadTime: row.production_time,
     careInstructions: row.maintenance_advice,
     featured: row.featured,

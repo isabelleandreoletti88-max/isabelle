@@ -38,7 +38,18 @@ export interface Creation {
   /** Disponibilité affichée telle quelle. À compléter par Isabelle. */
   availability: string;
   mainImage: string;
+  /** Texte alternatif de la photo principale. */
+  mainImageAlt: string;
   gallery: string[];
+  /** Nom lisible de la catégorie (ex. « Belles pensées »). */
+  categoryName: string;
+  /** Ancienne adresse, conservée pour rediriger les anciens liens. */
+  previousSlug: string | null;
+  /** Titre et description personnalisés pour les moteurs de recherche (vides = générés). */
+  seoTitle: string;
+  seoDescription: string;
+  createdAt: string;
+  updatedAt: string;
   /** Délai indicatif de réalisation. */
   leadTime: string;
   /** Conseils d'entretien, optionnels. */

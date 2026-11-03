@@ -17,7 +17,7 @@ export const siteConfig = {
   hours: 'Rencontrez l\'atelier à La Boutik\'art (Saint-Dié-des-Vosges) et à La Boutique des Artisans (Raon-l\'Étape)',
   facebook: 'https://www.facebook.com/profile.php?id=100017154126901',
   instagram: '',
-  logo: '/logo-atelier-isabelle-transparent.png',
+  logo: '/logo-atelier-isabelle.png',
   headerLogo: '/logo-atelier-isabelle-header.webp',
   defaultSeo: {
     title: "L'Atelier d'Isabelle — Créations artisanales faites main",
