@@ -35,6 +35,11 @@ const STATIC_ROUTES = [
   { path: '/conditions-utilisation', priority: '0.1' },
   { path: '/mediation-consommation', priority: '0.1' },
   { path: '/informations-commerciales', priority: '0.1' },
+  { path: '/conditions-generales-de-vente', priority: '0.2' },
+  { path: '/livraison', priority: '0.2' },
+  { path: '/retours-remboursements', priority: '0.2' },
+  { path: '/droit-de-retractation', priority: '0.2' },
+  { path: '/formulaire-retractation', priority: '0.1' },
 ];
 
 function readEnv() {

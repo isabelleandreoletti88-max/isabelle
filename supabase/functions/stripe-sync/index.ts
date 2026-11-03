@@ -120,7 +120,7 @@ async function syncProduct(db: SupabaseClient, productId: string, settings: Shop
 
   // Lien de paiement : recréé si le prix ou la livraison change.
   const rateId = await shippingRate(db, settings.shippingCents);
-  const signature = `${priceId}|${rateId ?? 'sans-livraison'}`;
+  const signature = `${priceId}|${rateId ?? 'sans-livraison'}|cgv1`;
   let link: { id: string; url: string } | null = null;
   if (product.stripe_payment_link_id) {
     const current = await stripe<{ id: string; url: string; active: boolean; metadata: Record<string, string> }>('GET', `payment_links/${product.stripe_payment_link_id}`).catch(() => null);
@@ -137,6 +137,7 @@ async function syncProduct(db: SupabaseClient, productId: string, settings: Shop
       ...(rateId ? { shipping_options: [{ shipping_rate: rateId }] } : {}),
       phone_number_collection: { enabled: true },
       billing_address_collection: 'auto',
+      custom_text: { submit: { message: `En validant le paiement, vous acceptez les conditions générales de vente (${SITE_URL}/conditions-generales-de-vente). Droit de rétractation : 14 jours après réception.` } },
       metadata: { supabase_id: product.id, signature },
     });
     if (product.stripe_payment_link_id && product.stripe_payment_link_id !== link.id) await stripe('POST', `payment_links/${product.stripe_payment_link_id}`, { active: false }).catch(() => {});

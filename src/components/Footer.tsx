@@ -124,6 +124,8 @@ export default function Footer() {
             </p>
             <ul className="space-y-2.5">
               <li><Link to="/informations-legales" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Informations légales</Link></li>
+              <li><Link to="/conditions-generales-de-vente" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Conditions générales de vente</Link></li>
+              <li><Link to="/livraison" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Livraison et retours</Link></li>
               <li><Link to="/mentions-legales" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Mentions légales</Link></li>
               <li><Link to="/politique-confidentialite" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Confidentialité</Link></li>
               <li><Link to="/conditions-utilisation" className="text-sm text-cream/70 hover:text-terracotta transition-colors">Conditions d’utilisation</Link></li>
