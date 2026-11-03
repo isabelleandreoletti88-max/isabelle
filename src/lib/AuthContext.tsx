@@ -56,11 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() { await supabase.auth.signOut(); }
   async function resetPassword(email: string) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/admin/login?reset=1` });
-    return { error: error ? 'Impossible d’envoyer le lien pour le moment.' : null };
+    if (!error) return { error: null };
+    // Supabase refuse un nouvel envoi pendant 60 secondes après le précédent.
+    if (error.status === 429) return { error: 'Un lien vient déjà d’être envoyé à cette adresse. Vérifiez votre boîte de réception et vos courriers indésirables, ou réessayez dans une minute.' };
+    return { error: 'Impossible d’envoyer le lien pour le moment.' };
   }
   async function updatePassword(password: string) {
     const { error } = await supabase.auth.updateUser({ password });
-    return { error: error ? 'Impossible de modifier le mot de passe.' : null };
+    if (!error) return { error: null };
+    if (error.code === 'same_password') return { error: 'Ce mot de passe est celui que vous utilisez déjà : choisissez-en un autre.' };
+    if (error.code === 'weak_password') return { error: 'Ce mot de passe est trop faible : choisissez-en un plus long ou plus varié.' };
+    return { error: 'Impossible de modifier le mot de passe. Le lien a peut-être expiré : redemandez-en un depuis « Mot de passe oublié ? ».' };
   }
 
   return <AuthContext.Provider value={{ session, profile, loading, signIn, signOut, resetPassword, updatePassword }}>{children}</AuthContext.Provider>;
