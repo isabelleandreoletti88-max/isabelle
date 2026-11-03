@@ -22,13 +22,13 @@ Deno.serve(async (req) => {
   // Seules les demandes toutes récentes, jamais notifiées, déclenchent un envoi.
   if (!request || request.notified_at || Date.now() - new Date(request.created_at).getTime() > 15 * 60 * 1000) return json({ sent: false });
 
-  const password = Deno.env.get('SMTP_PASSWORD');
+  const password = Deno.env.get('SMTP_PASSWORD')?.trim();
   if (!password) {
     await db.from('contact_requests').update({ notify_error: 'SMTP_PASSWORD non configuré' }).eq('id', id);
     return json({ sent: false, reason: 'not_configured' });
   }
 
-  const user = Deno.env.get('SMTP_USER') || 'contact@atelier-isabelle.fr';
+  const user = (Deno.env.get('SMTP_USER') || 'contact@atelier-isabelle.fr').trim().toLowerCase();
   const { data: setting } = await db.from('site_settings').select('setting_value').eq('setting_key', 'notification_email').maybeSingle();
   const to = String(setting?.setting_value || user);
 
