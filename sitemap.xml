@@ -188,13 +188,13 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/c-est-un-garcon-creation-en-galets</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/c-est-un-garcon-creation-en-galets.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/c-est-une-fille-creation-en-galets</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/c-est-une-fille-creation-en-galets.webp</image:loc></image:image>
   </url>
@@ -203,12 +203,6 @@
     <lastmod>2026-11-03</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/chaque-jour-est-un-cadeau.webp</image:loc></image:image>
-  </url>
-  <url>
-    <loc>https://atelier-isabelle.fr/creations/couronne-d-ete-douceur-champetre</loc>
-    <lastmod>2026-11-03</lastmod>
-    <priority>0.7</priority>
-    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/couronne-d-ete-douceur-champetre.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/croire-en-soi</loc>
@@ -224,7 +218,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/danser-son-bonheur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/danser-son-bonheur.webp</image:loc></image:image>
   </url>
@@ -265,26 +259,26 @@
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/hello-printemps.webp</image:loc></image:image>
   </url>
   <url>
-    <loc>https://atelier-isabelle.fr/creations/jardin-de-cactus</loc>
-    <lastmod>2026-11-03</lastmod>
-    <priority>0.7</priority>
-    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/jardin-de-cactus.webp</image:loc></image:image>
-  </url>
-  <url>
     <loc>https://atelier-isabelle.fr/creations/jardin-de-cactus-2</loc>
     <lastmod>2026-11-03</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/jardin-de-cactus-2.webp</image:loc></image:image>
   </url>
   <url>
-    <loc>https://atelier-isabelle.fr/creations/jusqu-a-la-lune-et-plus</loc>
+    <loc>https://atelier-isabelle.fr/creations/jardin-de-cactus</loc>
     <lastmod>2026-11-03</lastmod>
+    <priority>0.7</priority>
+    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/jardin-de-cactus.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/creations/jusqu-a-la-lune-et-plus</loc>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/jusqu-a-la-lune-et-plus.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/l-amitie-un-tresor-a-partager</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/l-amitie-un-tresor-a-partager.webp</image:loc></image:image>
   </url>
@@ -296,7 +290,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/l-amour-les-fleurs-et-le-soleil</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/l-amour-les-fleurs-et-le-soleil.webp</image:loc></image:image>
   </url>
@@ -314,7 +308,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/la-famille-un-lien-qui-ne-finit-jamais</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/la-famille-un-lien-qui-ne-finit-jamais.webp</image:loc></image:image>
   </url>
@@ -323,12 +317,6 @@
     <lastmod>2026-11-03</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/la-musique-de-l-ame.webp</image:loc></image:image>
-  </url>
-  <url>
-    <loc>https://atelier-isabelle.fr/creations/la-petite-maison-d-automne</loc>
-    <lastmod>2026-11-03</lastmod>
-    <priority>0.7</priority>
-    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/la-petite-maison-d-automne.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/la-petite-maison-des-cles</loc>
@@ -344,7 +332,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/la-petite-sorciere-d-automne</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/la-petite-sorciere-d-automne.webp</image:loc></image:image>
   </url>
@@ -398,7 +386,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-en-famille</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-en-famille.webp</image:loc></image:image>
   </url>
@@ -410,7 +398,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-est-dans-les-petites-choses</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-est-dans-les-petites-choses.webp</image:loc></image:image>
   </url>
@@ -422,7 +410,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-se-cree</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-se-cree.webp</image:loc></image:image>
   </url>
@@ -446,7 +434,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-sourire-parfum-du-bonheur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-sourire-parfum-du-bonheur.webp</image:loc></image:image>
   </url>
@@ -458,7 +446,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/les-petits-bonheurs</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/les-petits-bonheurs.webp</image:loc></image:image>
   </url>
@@ -470,13 +458,13 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/meilleures-amies-une-amitie-en-galets</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/meilleures-amies-une-amitie-en-galets.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/meilleures-amies-une-creation-a-trinquer</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/meilleures-amies-une-creation-a-trinquer.webp</image:loc></image:image>
   </url>
@@ -524,13 +512,13 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/que-du-bonheur-dans-ta-nouvelle-demeure</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/que-du-bonheur-dans-ta-nouvelle-demeure.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/soeurs-de-coeur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/soeurs-de-coeur.webp</image:loc></image:image>
   </url>
@@ -554,13 +542,13 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/un-petit-air-de-bonheur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/un-petit-air-de-bonheur.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/une-amie-une-soeur-de-coeur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/une-amie-une-soeur-de-coeur.webp</image:loc></image:image>
   </url>
@@ -572,7 +560,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/une-famille-un-amour-infini</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/une-famille-un-amour-infini.webp</image:loc></image:image>
   </url>
