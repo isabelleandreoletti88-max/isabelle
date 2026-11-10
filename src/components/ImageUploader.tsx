@@ -24,7 +24,7 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
       const uploaded = await uploadImage(file, bucket, folder, baseName);
       onChange(uploaded.url);
     } catch {
-      setError('L\u2019image n\u2019a pas pu \u00eatre import\u00e9e.');
+      setError('L’image n’a pas pu être importée.');
     } finally {
       setUploading(false);
     }
@@ -39,12 +39,12 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
         <div className={`${previewClass} rounded-soft overflow-hidden bg-beige/20 shrink-0 border border-wood-deep/10 relative`}>
           {value ? (
             <>
-              <img src={value} alt="Aper\u00e7u" className="w-full h-full object-cover" />
+              <img src={value} alt="Aperçu" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => onChange(null)}
                 className="absolute -top-2 -right-2 bg-red-700 text-off-white rounded-full p-1.5 hover:bg-red-800 transition-colors"
-                aria-label="Supprimer l\u2019image"
+                aria-label="Supprimer l’image"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -58,7 +58,7 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
         <div className="flex-1 min-w-0">
           <label className={`btn-secondary cursor-pointer inline-flex items-center gap-2 w-fit ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
             <ImagePlus className="h-4 w-4" />
-            {uploading ? 'Import en cours\u2026' : value ? 'Remplacer la photo\u2026' : 'Choisir une photo\u2026'}
+            {uploading ? 'Import en cours…' : value ? 'Remplacer la photo…' : 'Choisir une photo…'}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -71,7 +71,7 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
             />
           </label>
           {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
-          <p className="mt-2 text-xs text-wood-deep/50">JPG, PNG ou WebP \u2014 8 Mo maximum.</p>
+          <p className="mt-2 text-xs text-wood-deep/50">JPG, PNG ou WebP — 8 Mo maximum.</p>
         </div>
       </div>
     </div>

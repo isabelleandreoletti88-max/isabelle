@@ -399,12 +399,12 @@ export function AdminHeroSlides() {
               <div>
                 <p className="text-xs text-terracotta uppercase tracking-wider">{item.chapter || 'Chapitre'}</p>
                 <p className="font-medium mt-1">{item.title}</p>
-                <p className="text-xs text-wood-deep/50 mt-1">{item.video_id ? 'Vid\u00e9o YouTube' : item.image ? 'Image' : 'Aucun m\u00e9dia'}</p>
+                <p className="text-xs text-wood-deep/50 mt-1">{item.video_id ? 'Vidéo YouTube' : item.image ? 'Image' : 'Aucun média'}</p>
               </div>
               <span className="text-xs text-sage">#{item.display_order}</span>
             </div>
             {item.image && <div className="mt-3 rounded-soft overflow-hidden h-28 bg-beige/20"><img src={item.image} alt={item.title} className="w-full h-full object-cover" /></div>}
-            {item.video_id && <div className="mt-3 rounded-soft overflow-hidden h-28 bg-beige/20 flex items-center justify-center"><span className="text-xs text-wood-deep/50">Vid\u00e9o YouTube</span></div>}
+            {item.video_id && <div className="mt-3 rounded-soft overflow-hidden h-28 bg-beige/20 flex items-center justify-center"><span className="text-xs text-wood-deep/50">Vidéo YouTube</span></div>}
             <div className="flex gap-2 mt-5 pt-4 border-t border-wood-deep/10">
               <button className="btn-secondary text-sm" onClick={() => startEdit(item)}><Pencil className="h-4 w-4" />Modifier</button>
               <button className="p-2 text-wood-deep/55 hover:text-red-700" onClick={() => void remove(item)} aria-label={`Supprimer ${item.title}`}><Trash2 className="h-4 w-4" /></button>
@@ -432,10 +432,10 @@ export function AdminHeroSlides() {
             <Field label="Lien du bouton"><input className="input-field" value={draft.cta_to || ''} onChange={(e) => setDraft({ ...draft, cta_to: e.target.value })} placeholder="/boutique" /></Field>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="ID vid\u00e9o YouTube"><input className="input-field" value={draft.video_id || ''} onChange={(e) => setDraft({ ...draft, video_id: e.target.value || null })} placeholder="Laisser vide pour une image" /></Field>
+            <Field label="ID vidéo YouTube"><input className="input-field" value={draft.video_id || ''} onChange={(e) => setDraft({ ...draft, video_id: e.target.value || null })} placeholder="Laisser vide pour une image" /></Field>
             <div className="mb-4">
               <ImageUploader
-                label="Image de la banni\u00e8re"
+                label="Image de la bannière"
                 value={draft.image || null}
                 onChange={(url) => setDraft({ ...draft, image: url })}
                 bucket="site-images"
