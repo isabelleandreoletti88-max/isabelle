@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Sparkles, X } from 'lucide-react';
+import { seasons } from '@/config/catalog';
 import { usePublicCategories, usePublicCreations } from '@/lib/publicCatalog';
 import { breadcrumbJsonLd, itemListJsonLd } from '@/lib/structuredData';
 import { metaDescription } from '@/lib/seo';
@@ -37,6 +38,7 @@ export function BoutiquePage() {
   }
 
   // Anciens liens /boutique?categorie=… : redirection vers la page de la collection.
+  const season = seasons.find((item) => item.slug === params.get('saison'));
   const legacyCategory = params.get('categorie');
   useEffect(() => {
     if (legacyCategory && !collectionSlug) navigate(`/collections/${legacyCategory}`, { replace: true });
@@ -47,19 +49,22 @@ export function BoutiquePage() {
     [creations]
   );
 
+  // Tant qu'aucune création n'est rattachée à la saison demandée, on montre toute la boutique.
+  const seasonHasItems = Boolean(season) && creations.some((c) => c.seasons.includes(season!.slug));
   const filtered = useMemo(() => {
     const result = creations.filter((c) => {
       const q = filters.query.toLowerCase();
       return (!q || `${c.name} ${c.shortDescription} ${c.materials.join(' ')}`.toLowerCase().includes(q))
         && (filters.category === 'all' || c.category === filters.category)
-        && (!filters.customizableOnly || c.customizable);
+        && (!filters.customizableOnly || c.customizable)
+        && (!seasonHasItems || c.seasons.includes(season!.slug));
     });
     return [...result].sort((a, b) =>
       filters.sort === 'price-asc' ? (a.price ?? 999) - (b.price ?? 999)
       : filters.sort === 'price-desc' ? (b.price ?? 0) - (a.price ?? 0)
       : Number(b.featured) - Number(a.featured)
     );
-  }, [filters, creations]);
+  }, [filters, creations, season, seasonHasItems]);
 
   return (
     <>
@@ -91,6 +96,8 @@ export function BoutiquePage() {
             {loading && <p className="mb-6 text-sm text-wood-deep/60">Chargement des créations…</p>}
             {error && <p className="mb-6 text-sm text-red-700">{error}</p>}
             <ProductFilters filters={filters} onChange={setFilters} resultCount={filtered.length} totalCount={creations.length} availableCategorySlugs={availableCategorySlugs} />
+            {season && !seasonHasItems && !loading && <p className="mb-6 text-wood-deep/70">Les créations « {season.name} » arrivent bientôt. En attendant, voici toutes les créations de l’atelier.</p>}
+            {season && seasonHasItems && <p className="mb-6"><Link to="/boutique" className="inline-flex items-center gap-2 min-h-[40px] rounded-pill bg-wood-deep text-off-white pl-4 pr-3 text-sm font-medium hover:bg-terracotta transition-colors">Saison : {season.name} <X className="h-4 w-4" aria-label="Retirer le filtre" /></Link></p>}
             {filtered.length ? (
               <ProductGrid creations={filtered} />
             ) : (

@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
-import { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Outlet, Link, useLocation } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
+import { Suspense, lazy, useEffect, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { EASE, isPrerender } from '@/components/motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,11 +54,17 @@ function ScrollToTop() {
   return null;
 }
 
+/** Fondu d'entrée à chaque changement de page. */
+function PageFade({ children }: { children: ReactNode }) {
+  if (isPrerender) return <>{children}</>;
+  return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, ease: EASE }}>{children}</motion.div>;
+}
+
 function SiteLayout() {
   const { pathname } = useLocation();
   // Masqué sur les pages qui ont déjà un bouton de contact ou d'achat, pour ne pas cacher le contenu.
   const showContact = !/^\/(creations\/|contact|personnalisation|merci)/.test(pathname);
-  return <><ScrollToTop /><Header /><Outlet /><Footer />{showContact && <a href="/contact" className="lg:hidden fixed right-4 z-40 btn-primary shadow-card text-sm" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}>Contacter Isabelle</a>}</>;
+  return <><ScrollToTop /><Header /><PageFade key={pathname}><Outlet /></PageFade><Footer />{pathname.startsWith('/creations/') && <div className="h-20 lg:hidden bg-wood-darker" aria-hidden="true" />}{showContact && <Link to="/contact" aria-label="Contacter Isabelle" className="lg:hidden fixed right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-terracotta text-off-white shadow-card active:scale-95 transition-transform" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}><MessageCircle className="h-6 w-6" /></Link>}</>;
 }
 
 function App() {

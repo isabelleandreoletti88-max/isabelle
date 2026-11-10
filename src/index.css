@@ -210,3 +210,34 @@
 .safe-bottom {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
+
+/* Grain de papier très léger sur tout le site (matière artisanale). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .18 0 0 0 0 .1 0 0 0 0 .05 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media print { body::before { display: none; } }
+
+/* Questions fréquentes : ouverture en douceur là où le navigateur le permet. */
+@supports (interpolate-size: allow-keywords) {
+  .faq { interpolate-size: allow-keywords; }
+  .faq::details-content { block-size: 0; overflow: clip; opacity: 0; transition: block-size 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, content-visibility 0.5s allow-discrete; }
+  .faq[open]::details-content { block-size: auto; opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .faq::details-content { transition: none; } }
+}
+
+/* Lien de navigation : trait qui se dessine au survol. */
+.nav-link { position: relative; }
+.nav-link::after { content: ''; position: absolute; left: 0.875rem; right: 0.875rem; bottom: 0.25rem; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.nav-link:hover::after, .nav-link[aria-current='page']::after { transform: scaleX(1); }
+
+/* Rail horizontal aligné sur la grille du site, qui déborde jusqu'au bord de l'écran. */
+.rail-pad { --pad: 1rem; padding-inline: var(--pad); scroll-padding-inline: var(--pad); }
+@media (min-width: 640px) { .rail-pad { --pad: 1.5rem; } }
+@media (min-width: 1024px) { .rail-pad { --pad: max(2rem, calc((100vw - 80rem) / 2 + 2rem)); } }

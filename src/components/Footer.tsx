@@ -10,7 +10,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-b from-wood-deep to-wood-darker text-cream/90 mt-20 relative overflow-hidden">
+    <footer className="bg-gradient-to-b from-wood-deep to-wood-darker text-cream/90 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 rounded-pill bg-gradient-to-r from-transparent via-honey to-transparent" aria-hidden="true" />
       <div className="container-page py-12 lg:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">

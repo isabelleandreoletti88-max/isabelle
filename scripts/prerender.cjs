@@ -107,6 +107,8 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const server = serve(shell);
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  // Le site n'anime rien pendant la pré-génération : tout le contenu est visible dans le HTML.
+  await page.addInitScript(() => { window.__PRERENDER__ = true; });
   const rendered = [];
   for (const route of routes) {
     await page.goto(`http://localhost:${PORT}${route.path}`, { waitUntil: 'networkidle' });

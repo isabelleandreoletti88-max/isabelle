@@ -65,7 +65,7 @@ export default function Header() {
           {/* Nav desktop */}
           <nav className="hidden lg:flex items-center gap-0.5" aria-label="Navigation principale">
             {mainNav.map((item) => (
-              <Link key={item.path} to={item.path} className={`px-3.5 py-2 rounded-soft text-sm font-medium transition-colors ${isActive(item.path) ? 'text-terracotta' : 'text-wood-deep hover:text-terracotta'}`} aria-current={isActive(item.path) ? 'page' : undefined}>
+              <Link key={item.path} to={item.path} className={`nav-link px-3.5 py-2 rounded-soft text-sm font-medium transition-colors ${isActive(item.path) ? 'text-terracotta' : 'text-wood-deep hover:text-terracotta'}`} aria-current={isActive(item.path) ? 'page' : undefined}>
                 {item.label}
               </Link>
             ))}

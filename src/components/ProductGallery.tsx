@@ -35,13 +35,21 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
           className="block w-full rounded-soft-lg overflow-hidden bg-sand-light group relative shadow-card cursor-zoom-in"
           aria-label="Agrandir l'image"
         >
-          <div className="relative aspect-square">
+          <div
+            className="relative aspect-square"
+            onPointerMove={(e) => {
+              if (e.pointerType !== 'mouse') return;
+              const box = e.currentTarget.getBoundingClientRect();
+              e.currentTarget.style.setProperty('--zx', `${((e.clientX - box.left) / box.width) * 100}%`);
+              e.currentTarget.style.setProperty('--zy', `${((e.clientY - box.top) / box.height) * 100}%`);
+            }}
+          >
             <AnimatePresence initial={false}>
               <motion.img
                 key={images[active]}
                 src={images[active]}
                 alt={alt}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover [transform-origin:var(--zx,50%)_var(--zy,50%)] transition-transform duration-500 ease-out lg:group-hover:scale-[1.6] motion-reduce:lg:group-hover:scale-100"
                 loading="eager"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
