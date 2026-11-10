@@ -35,7 +35,7 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
   return (
     <div>
       <span className="label-field">{label}</span>
-      <div className="flex gap-4 items-start mt-1">
+      <div className={`flex gap-4 mt-1 ${shape === 'wide' ? 'flex-col' : 'items-start'}`}>
         <div className={`${previewClass} rounded-soft overflow-hidden bg-beige/20 shrink-0 border border-wood-deep/10 relative`}>
           {value ? (
             <>
@@ -55,10 +55,10 @@ export default function ImageUploader({ value, onChange, bucket = 'site-images',
             </div>
           )}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <label className={`btn-secondary cursor-pointer inline-flex items-center gap-2 w-fit ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
             <ImagePlus className="h-4 w-4" />
-            {uploading ? 'Import en cours\u2026' : 'Parcourir\u2026'}
+            {uploading ? 'Import en cours\u2026' : value ? 'Remplacer la photo\u2026' : 'Choisir une photo\u2026'}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"

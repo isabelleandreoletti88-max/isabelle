@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Check, CreditCard, ExternalLink, ImagePlus, Mail, Phone, Plus, RefreshCw, RotateCcw, Star, Trash2, X } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
@@ -160,7 +160,29 @@ export function AdminMaterials() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
   useEffect(() => { fetchAdminMaterials().then(setItems).catch(() => setError('Impossible de charger les matières.')); }, []);
+
+  /** Ouvre le formulaire et le fait apparaître à l'écran (il est sous la liste sur téléphone). */
+  function openDraft(next: Partial<MaterialRow> & { name: string }) {
+    setDraft(next);
+    window.setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }
+
+  /** Remplace la photo d'une matière en un clic : import, conversion WebP et enregistrement. */
+  async function changePhoto(item: MaterialRow, file: File) {
+    setUploadingId(item.id); setError(''); setMessage('');
+    try {
+      const uploaded = await uploadImage(file, 'site-images', 'matieres', `matiere-${item.name}`);
+      const savedRow = await saveMaterial({ ...item, image: uploaded.url });
+      setItems((all) => all.map((entry) => entry.id === savedRow.id ? savedRow : entry));
+      if (draft?.id === item.id) setDraft({ ...draft, image: uploaded.url });
+      setMessage(`La photo « ${item.name} » a été remplacée. Elle est déjà visible sur le site.`);
+    } catch { setError('La photo n’a pas pu être importée. Vérifiez qu’il s’agit bien d’une image (JPG, PNG, WebP…).'); }
+    finally { setUploadingId(null); }
+  }
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -181,7 +203,7 @@ export function AdminMaterials() {
   }
 
   return <>
-    <AdminTitle title="Matières" description="Les matières présentées sur l’accueil et la page « L’atelier » : photo, nom et texte." action={<button className="btn-primary" onClick={() => setDraft({ ...emptyMaterial, display_order: items.length + 1 })}><Plus className="h-4 w-4" />Ajouter</button>} />
+    <AdminTitle title="Matières" description="Les matières présentées sur l’accueil et la page « L’atelier » : photo, nom et texte." action={<button className="btn-primary" onClick={() => openDraft({ ...emptyMaterial, display_order: items.length + 1 })}><Plus className="h-4 w-4" />Ajouter</button>} />
     {error && <Notice text={error} error />}
     {message && <Notice text={message} />}
     <div className="grid xl:grid-cols-[minmax(0,1fr)_380px] gap-6 items-start">
@@ -191,14 +213,18 @@ export function AdminMaterials() {
           <div className="p-4">
             <div className="flex items-start justify-between gap-2"><p className="font-medium">{item.name}</p>{!item.published && <span className="badge-wood">Masquée</span>}</div>
             <p className="text-sm text-wood-deep/60 mt-1 line-clamp-3">{item.description}</p>
-            <div className="flex gap-2 mt-4">
-              <button className="btn-secondary text-sm" onClick={() => setDraft({ ...item })}>Modifier</button>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <label className={`btn-primary text-sm cursor-pointer ${uploadingId === item.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                <ImagePlus className="h-4 w-4" />{uploadingId === item.id ? 'Import…' : 'Changer la photo'}
+                <input type="file" accept="image/*" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void changePhoto(item, file); }} />
+              </label>
+              <button className="btn-secondary text-sm" onClick={() => openDraft({ ...item })}>Modifier</button>
               <button className="h-10 w-10 inline-flex items-center justify-center text-wood-deep/60 hover:text-red-700" onClick={() => void remove(item)} aria-label={`Supprimer ${item.name}`}><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>)}
       </div>
-      {draft && <form onSubmit={save} className="bg-off-white rounded-soft shadow-soft p-5 xl:sticky xl:top-24">
+      {draft && <form ref={formRef} onSubmit={save} className="bg-off-white rounded-soft shadow-soft p-5 xl:sticky xl:top-24 scroll-mt-20">
         <h2 className="text-xl font-medium mb-4">{draft.id ? 'Modifier la matière' : 'Nouvelle matière'}</h2>
         <ImageUploader label="Photo" value={draft.image || null} onChange={(url) => setDraft({ ...draft, image: url })} bucket="site-images" folder="matieres" shape="wide" baseName={`matiere-${draft.name}`} />
         <div className="mt-4" />

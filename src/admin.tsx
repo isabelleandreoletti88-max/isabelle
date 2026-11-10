@@ -4,7 +4,7 @@ import { BarChart3, ChevronRight, HelpCircle, ShoppingBag, Star, Layers, Type, S
 import { useAuth } from '@/lib/AuthContext';
 import { deleteCategory, deleteSeason, fetchAdminProducts, fetchAdminStats, fetchCategories, fetchSeasons, saveCategory, saveSeason, fetchHeroSlides, saveHeroSlide, deleteHeroSlide, type HeroSlideRow, fetchAdminEvents, saveEvent, deleteEvent, type EventRow } from '@/lib/catalogService';
 import { fetchSiteImages, saveSiteImage, type SiteImageKey } from '@/lib/siteImages';
-import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, syncProductWithStripe, archiveProductInStripe, fetchProductStripeState, type ProductStripeState, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
+import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, syncProductWithStripe, archiveProductInStripe, fetchProductStripeState, type ProductStripeState, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, fetchAdminMaterials, saveMaterial, type MaterialRow, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
 import { ProductGalleryEditor, ShopPanel } from '@/adminPages';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, metaDescription, slugify, thumbUrl } from '@/lib/seo';
@@ -568,8 +568,10 @@ export function AdminSiteImages() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
+  const [materialRows, setMaterialRows] = useState<MaterialRow[]>([]);
 
   useEffect(() => {
+    fetchAdminMaterials().then(setMaterialRows).catch(() => setError('Impossible de charger les matières.'));
     fetchSiteImages().then(setImages).catch(() => setError('Impossible de charger les images.'));
     fetchSeasons().then((rows) => setSeasonRows(rows as { id: string; name: string; slug: string; image: string | null }[])).catch(() => setError('Impossible de charger les saisons.'));
   }, []);
@@ -597,8 +599,18 @@ export function AdminSiteImages() {
     finally { setSaving(null); }
   }
 
+  async function saveMaterialImage(row: MaterialRow) {
+    setSaving(`material-${row.id}`);
+    setError(''); setMessage('');
+    try {
+      await saveMaterial({ ...row, image: row.image || null });
+      setMessage(`La photo « ${row.name} » a bien été enregistrée.`);
+    } catch { setError('La photo de la matière n\'a pas pu être enregistrée.'); }
+    finally { setSaving(null); }
+  }
+
   return <>
-    <AdminTitle title="Images du site" description="Modifiez toutes les images affichées sur le site : logos, photos de sections, saisons." />
+    <AdminTitle title="Images du site" description="Modifiez toutes les images affichées sur le site : logos, photos de sections, saisons et matières." />
     {error && <Notice text={error} error />}{message && <Notice text={message} />}
     <div className="grid lg:grid-cols-2 gap-6">
       {siteImageLabels.map(({ key, label, description }) => (
@@ -631,6 +643,28 @@ export function AdminSiteImages() {
             />
             <button className="btn-primary text-sm mt-3" onClick={() => void saveSeasonImage(season.id, season.slug, season.image || '')} disabled={saving === `season-${season.id}`}>
               {saving === `season-${season.id}` ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </Panel>
+        ))}
+      </div>
+    </div>
+    <div className="mt-8">
+      <h2 className="text-2xl font-medium mb-1">Photos des matières</h2>
+      <p className="text-sm text-wood-deep/60 mb-4">Affichées sur l’accueil et la page « L’atelier ». Le nom et le texte se modifient dans <Link to="/admin/matieres" className="text-terracotta underline">Matières</Link>.</p>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {materialRows.map((row) => (
+          <Panel key={row.id} title={row.name}>
+            <ImageUploader
+              label={`Photo « ${row.name} »`}
+              value={row.image || null}
+              onChange={(url) => setMaterialRows((current) => current.map((item) => item.id === row.id ? { ...item, image: url } : item))}
+              bucket="site-images"
+              folder="matieres"
+              shape="wide"
+              baseName={`matiere-${row.name}`}
+            />
+            <button className="btn-primary text-sm mt-3" onClick={() => void saveMaterialImage(row)} disabled={saving === `material-${row.id}`}>
+              {saving === `material-${row.id}` ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           </Panel>
         ))}
