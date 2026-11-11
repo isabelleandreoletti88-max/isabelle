@@ -2,97 +2,97 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://atelier-isabelle.fr/</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/boutique</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/personnalisation</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/a-propos</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/evenements</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/contact</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/informations-legales</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/mentions-legales</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/politique-confidentialite</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/cookies</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/gestion-des-cookies</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/conditions-utilisation</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/mediation-consommation</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/informations-commerciales</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/conditions-generales-de-vente</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/livraison</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/retours-remboursements</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/droit-de-retractation</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.2</priority>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/formulaire-retractation</loc>
-    <lastmod>2026-11-10</lastmod>
+    <lastmod>2026-11-11</lastmod>
     <priority>0.1</priority>
   </url>
   <url>
@@ -206,7 +206,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/croire-en-soi</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/croire-en-soi.webp</image:loc></image:image>
   </url>
@@ -236,7 +236,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/dire-non-c-est-se-dire-oui</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/dire-non-c-est-se-dire-oui.webp</image:loc></image:image>
   </url>
@@ -260,7 +260,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/jardin-de-cactus-2</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/jardin-de-cactus-2.webp</image:loc></image:image>
   </url>
@@ -380,7 +380,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-c-est-une-maison-remplie-d-amour-et-de-chats</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-c-est-une-maison-remplie-d-amour-et-de-chats.webp</image:loc></image:image>
   </url>
@@ -403,16 +403,16 @@
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-est-dans-les-petites-choses.webp</image:loc></image:image>
   </url>
   <url>
-    <loc>https://atelier-isabelle.fr/creations/le-bonheur-se-cree-2</loc>
-    <lastmod>2026-11-03</lastmod>
-    <priority>0.7</priority>
-    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-se-cree-2.webp</image:loc></image:image>
-  </url>
-  <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-se-cree</loc>
     <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-se-cree.webp</image:loc></image:image>
+  </url>
+  <url>
+    <loc>https://atelier-isabelle.fr/creations/le-bonheur-se-cree-2</loc>
+    <lastmod>2026-11-03</lastmod>
+    <priority>0.7</priority>
+    <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-bonheur-se-cree-2.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-bonheur-se-cultive</loc>
@@ -422,7 +422,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/le-chemin-du-bonheur</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/le-chemin-du-bonheur.webp</image:loc></image:image>
   </url>
@@ -524,7 +524,7 @@
   </url>
   <url>
     <loc>https://atelier-isabelle.fr/creations/toi-et-moi</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-10</lastmod>
     <priority>0.7</priority>
     <image:image><image:loc>https://clkkasnnbiktrrncabjc.supabase.co/storage/v1/object/public/product-images/catalogue/toi-et-moi.webp</image:loc></image:image>
   </url>
