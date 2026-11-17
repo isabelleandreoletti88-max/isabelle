@@ -32,9 +32,9 @@ export function productImageAlt(name: string, material?: string) {
   return `${name.trim()} — décoration artisanale ${label ? `en ${label} ` : ''}faite main par L’Atelier d’Isabelle`;
 }
 
-/** Prix en euros à la française : « 12 € », « 15,90 € ». */
+/** Prix en euros à la française, toujours avec deux décimales : « 12,00 € », « 15,90 € ». */
 export function formatPrice(value: number) {
-  return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: Number.isInteger(value) ? 0 : 2 });
+  return value.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 /** Coupe une description à la longueur conseillée pour les moteurs de recherche, sans couper un mot. */

@@ -147,7 +147,7 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /merci\nDisallow: /panier\nDisallow: /commande\n\n${aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\nDisallow: /admin\n`).join('\n')}\nSitemap: ${SITE_URL}/sitemap.xml\n`);
 
   // llms.txt : résumé factuel du site pour les assistants IA (format https://llmstxt.org).
-  const euro = (n) => `${Number(n).toFixed(2).replace('.', ',').replace(',00', '')} €`;
+  const euro = (n) => `${Number(n).toFixed(2).replace('.', ',')} €`;
   const permanent = shops.filter((s) => s.is_permanent);
   const llms = [
     `# ${settings.brand_name || "L'Atelier d'Isabelle"}`,
