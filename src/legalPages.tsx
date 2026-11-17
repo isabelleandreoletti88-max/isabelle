@@ -11,7 +11,7 @@ function has(settings: S, key: string): boolean { return Boolean(settings[key]);
 function fmtDate(iso: string): string { if (!iso) return ''; try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch { return iso; } }
 
 export function LegalHubPage() {
-  const { settings, loading } = useLegalSettings();
+  const { loading } = useLegalSettings();
   const groups = [
     { label: 'Informations générales', items: [
       { to: '/mentions-legales', label: 'Mentions légales', icon: Scale, desc: 'Éditeur, hébergeur, propriété intellectuelle.' },
@@ -317,6 +317,11 @@ function useSaleInfo() {
     shippingFee: fee > 0 ? formatPrice(fee) : '',
     shippingNote: site.shop_shipping_note,
     returnAddress: val(s, 'ecommerce_return_address') || val(s, 'editor_address'),
+    homeDelivery: site.shop_home_delivery_enabled !== 'false',
+    pickup: site.shop_pickup_enabled !== 'false' && Boolean(site.shop_pickup_address),
+    pickupName: site.shop_pickup_name,
+    pickupAddress: site.shop_pickup_address,
+    pickupInstructions: site.shop_pickup_instructions,
   };
 }
 
@@ -369,13 +374,13 @@ export function CgvPage() {
     { id: 'prix', title: '4. Prix', children: (
       <div className="space-y-3">
         <p>Les prix sont indiqués en euros, toutes taxes comprises. {i.vatFranchise || !i.vatNumber ? 'L’atelier bénéficie de la franchise en base de TVA (TVA non applicable, article 293 B du CGI).' : ''}</p>
-        <p>Les frais de livraison s'ajoutent au prix de la création{i.shippingFee ? ` (${i.shippingFee} par commande en France métropolitaine)` : ''} ; leur montant est affiché sur la fiche de la création et récapitulé avant le paiement. L'atelier peut modifier ses prix à tout moment ; la création est facturée au prix affiché lors de la validation de la commande.</p>
+        <p>En cas de livraison à domicile, les frais de livraison s'ajoutent au prix des créations{i.shippingFee ? ` (${i.shippingFee} par commande en France métropolitaine, quel que soit le nombre d’articles)` : ''} ; le retrait en boutique est gratuit. Leur montant est affiché dans le panier et récapitulé avant le paiement. L'atelier peut modifier ses prix à tout moment ; la création est facturée au prix affiché lors de la validation de la commande.</p>
       </div>
     )},
     { id: 'commande', title: '5. Commande', children: (
       <div className="space-y-3">
-        <p>Pour commander, le client clique sur « Acheter cette création » sur la fiche de la création. Il est dirigé vers une page de paiement sécurisée où il indique ses coordonnées et son adresse de livraison, vérifie le récapitulatif (création, prix, frais de livraison, total) et peut corriger ses informations avant de valider.</p>
-        <p>Le contrat est conclu au moment où le paiement est accepté. Un e-mail de confirmation récapitulant la commande est alors envoyé au client. L'atelier conserve une trace de la commande et la tient à disposition du client sur simple demande.</p>
+        <p>Pour commander, le client ajoute une ou plusieurs créations à son panier, choisit son mode de réception (livraison à domicile ou retrait gratuit en boutique lorsqu'il est proposé), indique ses coordonnées et vérifie le récapitulatif : créations, quantités, prix, frais de livraison éventuels et total à payer. Il peut modifier son panier à tout moment avant le paiement.</p>
+        <p>Après avoir accepté les présentes CGV, le client est dirigé vers la page de paiement sécurisée de Stripe, où il indique, en cas de livraison, son adresse complète. Le contrat est conclu au moment où le paiement est accepté. Un e-mail de confirmation récapitulant la commande est alors envoyé au client. L'atelier conserve une trace de la commande et la tient à disposition du client sur simple demande.</p>
       </div>
     )},
     { id: 'paiement', title: '6. Paiement', children: (
@@ -385,7 +390,7 @@ export function CgvPage() {
       </div>
     )},
     { id: 'livraison', title: '7. Livraison', children: (
-      <p>Les créations sont livrées à l'adresse indiquée lors de la commande, en France métropolitaine. Les délais, frais et conditions sont précisés dans la <Link to="/livraison" className={lnk}>politique de livraison</Link>. Sauf délai indiqué, la livraison intervient au plus tard 30 jours après la commande. Les risques de perte ou d'endommagement vous sont transférés lorsque vous (ou la personne désignée par vous) prenez physiquement possession de la création.</p>
+      <p>Les créations sont livrées à l'adresse indiquée lors de la commande, en France métropolitaine, ou remises gratuitement en boutique lorsque le client a choisi le retrait. Les délais, frais et conditions sont précisés dans la <Link to="/livraison" className={lnk}>politique de livraison</Link>. Sauf délai indiqué, la livraison intervient au plus tard 30 jours après la commande. Les risques de perte ou d'endommagement vous sont transférés lorsque vous (ou la personne désignée par vous) prenez physiquement possession de la création.</p>
     )},
     { id: 'retractation', title: '8. Droit de rétractation', children: (
       <p>Vous disposez de 14 jours à compter de la réception de la création pour vous rétracter, sans avoir à vous justifier. Les modalités, les exceptions et le formulaire type figurent sur les pages <Link to="/droit-de-retractation" className={lnk}>Droit de rétractation</Link>, <Link to="/retours-remboursements" className={lnk}>Retours et remboursements</Link> et <Link to="/formulaire-retractation" className={lnk}>Formulaire de rétractation</Link>.</p>
@@ -412,14 +417,21 @@ export function CgvPage() {
 export function ShippingPage() {
   const i = useSaleInfo();
   const sections = [
+    { id: 'modes', title: 'Deux façons de recevoir votre commande', children: (
+      <ul className="list-disc pl-5 space-y-2">
+        {i.homeDelivery && <li><strong>Livraison à domicile</strong>, en France métropolitaine{i.shippingFee ? ` : ${i.shippingFee} par commande, quel que soit le nombre d’articles` : ''}.</li>}
+        {i.pickup && <li><strong>Retrait gratuit en boutique</strong>{i.pickupName ? ` à ${i.pickupName}` : ''}{i.pickupAddress ? ` (${i.pickupAddress.replace(/\n/g, ', ')})` : ''}. Aucune adresse de livraison n’est demandée ; vous êtes prévenu(e) par e-mail lorsque votre commande est prête.{i.pickupInstructions ? ` ${i.pickupInstructions}` : ''}</li>}
+        {!i.homeDelivery && !i.pickup && <li>Les modes de réception sont indiqués dans le panier.</li>}
+      </ul>
+    )},
     { id: 'zones', title: 'Zones de livraison', children: <p>{has(i.s, 'ecommerce_delivery_zones') ? val(i.s, 'ecommerce_delivery_zones') : 'Les commandes en ligne sont livrées en France métropolitaine (Corse incluse). Pour un envoi vers les DOM-TOM ou l’étranger, écrivez-nous avant de commander : nous vous proposerons une solution.'}</p> },
     { id: 'frais', title: 'Frais de livraison', children: (
       <div className="space-y-3">
-        <p>{has(i.s, 'ecommerce_shipping_fees') ? val(i.s, 'ecommerce_shipping_fees') : i.shippingFee ? `Les frais de livraison s’élèvent à ${i.shippingFee} par commande.` : 'Les frais de livraison sont indiqués sur la fiche de chaque création.'} Ils sont affichés sur la fiche de la création et dans le récapitulatif avant paiement.</p>
+        <p>{has(i.s, 'ecommerce_shipping_fees') ? val(i.s, 'ecommerce_shipping_fees') : i.shippingFee ? `Les frais de livraison à domicile s’élèvent à ${i.shippingFee} par commande, quel que soit le nombre d’articles. Le retrait en boutique est gratuit.` : 'Les frais de livraison sont indiqués sur la fiche de chaque création.'} Ils sont affichés dans le panier et dans le récapitulatif avant paiement.</p>
         {i.shippingNote && <p>{i.shippingNote}</p>}
       </div>
     )},
-    { id: 'transport', title: 'Mode d’envoi', children: <p>{has(i.s, 'ecommerce_carriers') ? val(i.s, 'ecommerce_carriers') : 'Les créations sont expédiées par La Poste (Colissimo) ou un transporteur équivalent, avec suivi. Le numéro de suivi vous est communiqué par e-mail lors de l’expédition.'}</p> },
+    { id: 'transport', title: 'Mode d’envoi', children: <p>{has(i.s, 'ecommerce_carriers') ? val(i.s, 'ecommerce_carriers') : 'Les colis sont préparés et expédiés par Isabelle, par La Poste (Colissimo) ou un autre transporteur de son choix. Vous êtes prévenu(e) par e-mail lors de l’expédition, avec le numéro de suivi lorsqu’il existe.'}</p> },
     { id: 'emballage', title: 'Emballage', children: <p>Chaque création est soigneusement protégée et emballée à la main à l'atelier, pour voyager sans risque et pouvoir être offerte directement.</p> },
     { id: 'delais', title: 'Délais', children: (
       <div className="space-y-3">

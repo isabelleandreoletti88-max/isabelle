@@ -144,7 +144,7 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   fs.writeFileSync(path.join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join('\n')}\n</urlset>\n`);
   // Les robots des moteurs IA (ChatGPT, Claude, Perplexity, Gemini…) sont explicitement les bienvenus.
   const aiBots = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User', 'Google-Extended', 'Applebot-Extended', 'Bingbot'];
-  fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /merci\n\n${aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\nDisallow: /admin\n`).join('\n')}\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+  fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /merci\nDisallow: /panier\nDisallow: /commande\n\n${aiBots.map((bot) => `User-agent: ${bot}\nAllow: /\nDisallow: /admin\n`).join('\n')}\nSitemap: ${SITE_URL}/sitemap.xml\n`);
 
   // llms.txt : résumé factuel du site pour les assistants IA (format https://llmstxt.org).
   const euro = (n) => `${Number(n).toFixed(2).replace('.', ',').replace(',00', '')} €`;

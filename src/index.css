@@ -241,3 +241,11 @@ body::before {
 .rail-pad { --pad: 1rem; padding-inline: var(--pad); scroll-padding-inline: var(--pad); }
 @media (min-width: 640px) { .rail-pad { --pad: 1.5rem; } }
 @media (min-width: 1024px) { .rail-pad { --pad: max(2rem, calc((100vw - 80rem) / 2 + 2rem)); } }
+
+/* Impression de la fiche d'expédition (administration > Commandes) : seule la fiche est imprimée. */
+@media print {
+  body { background: #fff !important; }
+  body:has(.print-area) * { visibility: hidden; }
+  body:has(.print-area) .print-area, body:has(.print-area) .print-area * { visibility: visible; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; box-shadow: none !important; }
+}

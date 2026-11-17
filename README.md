@@ -85,17 +85,55 @@ Les tables `site_contents` et `site_settings` sont prêtes pour rendre les texte
 - Créer un profil `editor` et vérifier qu’il ne peut pas modifier les paramètres sensibles.
 - Exécuter l’advisor de sécurité Supabase après toute évolution des policies.
 
-## Préparer l’e-commerce
+## Boutique en ligne (panier et paiement Stripe)
 
-La couche d’interface sépare déjà les données des créations, les fiches, les filtres et les appels à l’action. Pour évoluer :
+### Fonctionnement
 
-1. Ajouter des variantes et options de personnalisation dans les données.
-2. Ajouter un contexte panier avec persistance locale ou serveur.
-3. Créer un checkout côté serveur avec Stripe ou une solution e-commerce ; ne jamais mettre de clé secrète dans le navigateur.
-4. Gérer disponibilité, stock, livraison et commandes côté serveur.
-5. Ajouter confirmation et suivi de commande.
+1. Isabelle coche **« Vendre en ligne »** sur une création (Admin → Créations) et, pour une pièce en plusieurs exemplaires, indique la quantité disponible (vide = pièce unique).
+2. Le visiteur ajoute des créations au **panier** (`/panier`), choisit **Livraison à domicile** (frais fixes par commande) ou **Retrait gratuit en boutique**, donne ses coordonnées et accepte les CGV.
+3. La fonction serveur `checkout-create` **recalcule tout** depuis le catalogue (prix, disponibilité, frais de port, total), enregistre la commande « en attente » et crée la session **Stripe Checkout** (paiement unique en euros ; adresse de livraison demandée par Stripe uniquement pour la livraison à domicile).
+4. Seul le **webhook Stripe signé** (`stripe-webhook`) — ou une vérification directe auprès de Stripe par `checkout-status` — fait passer la commande à « payée ». Le numéro (CMD-AAAA-0001), le passage en « Vendue » des pièces uniques, l'e-mail au client et la notification à Isabelle sont faits à ce moment-là, une seule fois.
+5. Isabelle traite la commande dans **Admin → Commandes** : « À préparer » → « Prête pour retrait » ou « Expédiée » (avec transporteur et suivi facultatifs ; e-mail au client) → « Terminée ».
 
-Aucun faux panier ni faux paiement n’est simulé dans cette version.
+Deux statuts distincts : **paiement** (en attente, en cours de validation, payée, refusée, abandonnée, remboursée) et **préparation** (à préparer, prête pour retrait, expédiée, terminée, annulée).
+
+Tant que la boutique est **fermée** (Admin → Paramètres → Boutique en ligne), rien n'apparaît pour le public. Une personne connectée à l'administration voit la boutique en aperçu et peut la tester, **uniquement avec une clé Stripe de test** (vérifié côté serveur).
+
+### Fichiers
+
+| Rôle | Fichiers |
+|---|---|
+| Base de données | `supabase/migrations/20261117100000_cart_checkout.sql` (tables `orders`, `order_items`, `stripe_events`, réglages de livraison) |
+| Fonctions serveur | `supabase/functions/checkout-create`, `checkout-status`, `stripe-webhook`, `order-update`, `stripe-sync` (état de Stripe et création automatique du webhook) ; logique commune dans `_shared/shop.ts`, `_shared/mail.ts`, `_shared/stripe.ts` |
+| Site | `src/lib/cart.tsx` (panier), `src/components/BuyBox.tsx` (ajout au panier), `src/pages/CartPage.tsx` (panier et confirmation), `src/components/Header.tsx` (icône panier) |
+| Administration | `src/adminPages.tsx` : `AdminOrders`, `AdminDelivery`, `ShopSettings`, `ShopPanel` |
+| Tests | `supabase/functions/_tests/` (faux serveur Stripe, banc d'essai, 57 vérifications) |
+
+### Secrets (Supabase → Edge Functions → Secrets)
+
+| Nom | Contenu |
+|---|---|
+| `STRIPE_SECRET_KEY` | Clé secrète du compte Stripe **d'Isabelle** : `sk_test_…` pour les essais, `sk_live_…` seulement après validation |
+| `SMTP_PASSWORD` | Mot de passe de contact@atelier-isabelle.fr (déjà en place) |
+| `SMTP_USER`, `SMTP_HOST`, `SMTP_PORT` | Facultatifs (par défaut contact@atelier-isabelle.fr, smtp.hostinger.com, 465) |
+
+Aucune clé Stripe n'est jamais dans le code du site ni dans le navigateur. `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis automatiquement aux fonctions. `STRIPE_API_BASE` ne sert qu'aux tests automatisés et ne doit pas être défini en production.
+
+### Webhook Stripe
+
+Rien à faire à la main : en ouvrant **Admin → Paramètres**, la fonction `stripe-sync` crée le point de réception
+`https://clkkasnnbiktrrncabjc.supabase.co/functions/v1/stripe-webhook` dans Stripe (événements `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`) et conserve son secret de signature dans `private.stripe_config`. Un point distinct est créé pour le mode test et pour le mode réel.
+
+### Paiement de test
+
+1. Mettre une clé `sk_test_…` dans `STRIPE_SECRET_KEY`, ouvrir Admin → Paramètres (le bandeau indique « Mode test »).
+2. Renseigner Admin → Paramètres de livraison (adresse de retrait), cocher « Vendre en ligne » sur une création.
+3. Connecté à l'administration, ouvrir la création sur le site, l'ajouter au panier et payer avec la carte `4242 4242 4242 4242`, date future, CVC quelconque (refus : `4000 0000 0000 0002` ; authentification 3D Secure : `4000 0025 0000 3155`).
+4. Vérifier la commande dans Admin → Commandes et les e-mails reçus.
+
+### Tests automatisés
+
+`supabase/functions/_tests/` contient un faux serveur Stripe (`mock-stripe.cjs`), un banc d'essai Deno qui exécute les fonctions du dépôt (`harness.ts`) et les scénarios (`shop.test.cjs`). Ils écrivent dans la base réelle et doivent être lancés uniquement boutique fermée, avec les identifiants de créations de test du script ; ils remettent les créations en l'état, mais les commandes de test sont à supprimer ensuite.
 
 ## Hébergement actuel
 
@@ -107,6 +145,8 @@ Aucun faux panier ni faux paiement n’est simulé dans cette version.
 | Section | Contenu |
 |---|---|
 | Demandes | Messages reçus par les formulaires, statut, notes, réponse par e-mail |
+| Commandes | Commandes payées et non abouties, articles, client, adresse ou retrait, statut de préparation, transporteur et suivi, e-mails au client, impression de la fiche d'expédition |
+| Paramètres de livraison | Livraison à domicile (oui/non, frais fixes par commande), retrait gratuit en boutique (oui/non, lieu, adresse, indications) |
 | Créations | Fiche complète, galerie de plusieurs photos (ordre, photo principale, description), saisons, matières, publication, coup de cœur, titre et description Google |
 | Catégories, Saisons | Collections de la boutique et saisons |
 | Matières | Photo, nom et texte des matières (accueil, page L'atelier) |
