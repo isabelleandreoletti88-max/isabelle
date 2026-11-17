@@ -432,7 +432,7 @@ export function AdminDelivery() {
           </div>
         </div>
         <Field label="Autres indications (consignes, fermetures exceptionnelles)"><textarea className="input-field min-h-20" value={values.shop_pickup_instructions} onChange={(event) => setValues({ ...values, shop_pickup_instructions: event.target.value })} /></Field>
-        {pickupMissing && <p className="text-xs text-amber-800 bg-amber-50 rounded-soft p-2">Indiquez au moins le nom du lieu de retrait : sans lui, le retrait n’est pas proposé dans le panier.</p>}
+        {pickupMissing && <p className="text-xs text-amber-800 bg-amber-50 rounded-soft p-2">Sans lieu renseigné, le retrait reste proposé : le client lit qu’Isabelle lui indiquera le lieu et le moment par e-mail.</p>}
       </Panel>
       <div className="lg:col-span-2"><button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer'}</button></div>
     </form>

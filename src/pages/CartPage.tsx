@@ -43,7 +43,9 @@ export function CartPage() {
   const pickupEnabled = pickupAvailable(settings);
   const pickupDays = scheduleLines(settings.shop_pickup_schedule);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
-  const chosen: Delivery | null = delivery && ((delivery === 'shipping' && homeEnabled) || (delivery === 'pickup' && pickupEnabled)) ? delivery : homeEnabled ? 'shipping' : pickupEnabled ? 'pickup' : null;
+  // Aucun mode n'est présélectionné : le client choisit lui-même (sauf s'il n'y en a qu'un).
+  const onlyOne: Delivery | null = homeEnabled && !pickupEnabled ? 'shipping' : pickupEnabled && !homeEnabled ? 'pickup' : null;
+  const chosen: Delivery | null = delivery && ((delivery === 'shipping' && homeEnabled) || (delivery === 'pickup' && pickupEnabled)) ? delivery : onlyOne;
   const [contact, setContact] = useState<Contact>(() => (typeof window === 'undefined' ? emptyContact : readContact()));
   const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -173,6 +175,7 @@ export function CartPage() {
                     {/* Réception */}
                     <fieldset>
                       <legend className="font-serif text-2xl">Comment souhaitez-vous recevoir votre commande ?</legend>
+                      {!chosen && homeEnabled && pickupEnabled && <p className="mt-1 text-sm text-wood-deep/70">Choisissez la livraison à domicile ou le retrait gratuit en boutique.</p>}
                       {!homeEnabled && !pickupEnabled && <p className="mt-4 text-sm text-red-800">Aucun mode de réception n’est disponible pour le moment. Contactez l’atelier.</p>}
                       <div className="mt-4 grid sm:grid-cols-2 gap-3">
                         {homeEnabled && (
@@ -197,7 +200,8 @@ export function CartPage() {
                           <MapPin className="h-5 w-5 shrink-0 text-terracotta" />
                           <div>
                             {settings.shop_pickup_name && <p className="font-medium">{settings.shop_pickup_name}</p>}
-                            <p className="whitespace-pre-line">{settings.shop_pickup_address}</p>
+                            {settings.shop_pickup_address && <p className="whitespace-pre-line">{settings.shop_pickup_address}</p>}
+                            {!settings.shop_pickup_name && !settings.shop_pickup_address && <p>Isabelle vous indiquera par e-mail le lieu et le moment du retrait{settings.city ? ` (${settings.city})` : ''}.</p>}
                             {pickupDays.length > 0 && <div className="mt-2"><p className="font-medium">Jours de présence d’Isabelle</p><ul className="mt-0.5">{pickupDays.map((line) => <li key={line}>{line}</li>)}</ul></div>}
                             {settings.shop_pickup_instructions && <p className="mt-2 text-wood-deep/65 whitespace-pre-line">{settings.shop_pickup_instructions}</p>}
                           </div>
@@ -231,7 +235,7 @@ export function CartPage() {
                   <h2 className="font-serif text-2xl">Récapitulatif</h2>
                   <dl className="mt-5 space-y-3 text-[0.95rem]">
                     <div className="flex justify-between gap-4"><dt className="text-wood-deep/70">Sous-total ({valid.reduce((n, r) => n + r.quantity, 0)} article{valid.reduce((n, r) => n + r.quantity, 0) > 1 ? 's' : ''})</dt><dd className="tabular-nums">{formatPrice(subtotal)}</dd></div>
-                    <div className="flex justify-between gap-4"><dt className="text-wood-deep/70">{chosen === 'pickup' ? 'Retrait gratuit en boutique' : 'Livraison à domicile'}</dt><dd className="tabular-nums">{shipping > 0 ? formatPrice(shipping) : 'Gratuit'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-wood-deep/70">{chosen === 'pickup' ? 'Retrait gratuit en boutique' : chosen === 'shipping' ? 'Livraison à domicile' : 'Livraison ou retrait'}</dt><dd className="tabular-nums">{!chosen ? 'À choisir' : shipping > 0 ? formatPrice(shipping) : 'Gratuit'}</dd></div>
                     <div className="flex justify-between gap-4 border-t border-wood-deep/15 pt-4 text-lg font-medium"><dt>Total à payer</dt><dd className="tabular-nums">{formatPrice(total)}</dd></div>
                   </dl>
                   {legal.editor_vat_franchise === 'true' && <p className="mt-2 text-xs text-wood-deep/70">TVA non applicable, article 293 B du CGI.</p>}
@@ -241,7 +245,7 @@ export function CartPage() {
                   </label>
                   {error && <p className="mt-4 flex gap-2 rounded-soft bg-red-50 px-3 py-2.5 text-sm text-red-800" role="alert"><AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />{error}</p>}
                   <button type="submit" disabled={submitting || loading || !valid.length || blocked || !chosen} className="btn-primary mt-5 w-full py-4 text-base">
-                    <Lock className="h-4 w-4" />{submitting ? 'Ouverture du paiement sécurisé…' : `Payer ${formatPrice(total)}`}
+                    <Lock className="h-4 w-4" />{submitting ? 'Ouverture du paiement sécurisé…' : chosen ? `Payer ${formatPrice(total)}` : 'Choisissez livraison ou retrait'}
                   </button>
                   {blocked && <p className="mt-2 text-xs text-red-800">Retirez les créations indisponibles pour continuer.</p>}
                   <ul className="mt-5 space-y-2 text-xs text-wood-deep/70">

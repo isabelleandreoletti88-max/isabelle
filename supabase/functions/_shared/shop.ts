@@ -52,7 +52,7 @@ export async function loadShopSettings(db: SupabaseClient): Promise<ShopSettings
     homeDelivery: map.shop_home_delivery_enabled !== 'false',
     shippingCents: toCents(map.shop_shipping_fee) ?? 590,
     shippingNote: map.shop_shipping_note || '',
-    pickup: map.shop_pickup_enabled !== 'false' && Boolean(map.shop_pickup_address?.trim() || map.shop_pickup_name?.trim()),
+    pickup: map.shop_pickup_enabled !== 'false',
     pickupName: map.shop_pickup_name?.trim() || '',
     pickupAddress: map.shop_pickup_address?.trim() || '',
     pickupInstructions: map.shop_pickup_instructions?.trim() || '',
@@ -144,9 +144,10 @@ function receptionBlock(order: Order) {
     };
   }
   const place = order.pickup_location || {};
+  const unknownPlace = !place.name && !place.address ? "<br>Isabelle vous indiquera par e-mail le lieu et le moment du retrait." : '';
   const days = place.schedule?.length ? `<br><strong>Jours de présence d'Isabelle :</strong><br>${place.schedule.map(escapeHtml).join('<br>')}` : '';
   return {
-    html: `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;margin:18px 0;font-size:14px;line-height:1.6"><strong>Retrait gratuit en boutique</strong><br>${escapeHtml(place.name || '')}${place.name ? '<br>' : ''}${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${days}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}<br><strong>Attendez notre e-mail « commande prête » avant de vous déplacer.</strong></div>`,
+    html: `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;margin:18px 0;font-size:14px;line-height:1.6"><strong>Retrait gratuit en boutique</strong><br>${escapeHtml(place.name || '')}${place.name ? '<br>' : ''}${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${unknownPlace}${days}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}<br><strong>Attendez notre e-mail « commande prête » avant de vous déplacer.</strong></div>`,
     text: `Retrait gratuit en boutique :\n${[place.name, place.address, place.schedule?.length ? `Jours de présence d'Isabelle : ${place.schedule.join(', ')}` : '', place.instructions].filter(Boolean).join('\n')}\nAttendez notre e-mail « commande prête » avant de vous déplacer.`,
   };
 }

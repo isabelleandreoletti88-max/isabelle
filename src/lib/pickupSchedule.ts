@@ -21,7 +21,7 @@ export function scheduleLines(value: string | null | undefined): string[] {
   return parseSchedule(value).filter((d) => d.open).map((d) => (d.hours.trim() ? `${d.day} : ${d.hours.trim()}` : d.day));
 }
 
-/** Le retrait est proposé s'il est activé et que le lieu est renseigné (nom ou adresse). */
-export function pickupAvailable(settings: { shop_pickup_enabled: string; shop_pickup_name: string; shop_pickup_address: string }) {
-  return settings.shop_pickup_enabled !== 'false' && Boolean(settings.shop_pickup_name?.trim() || settings.shop_pickup_address?.trim());
+/** Le retrait gratuit est proposé dès qu'il est activé ; sans lieu renseigné, Isabelle l'indique par e-mail. */
+export function pickupAvailable(settings: { shop_pickup_enabled: string }) {
+  return settings.shop_pickup_enabled !== 'false';
 }

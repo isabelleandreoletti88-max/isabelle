@@ -189,7 +189,7 @@ Deno.serve(async (req) => {
           }
         : {}),
       custom_text: {
-        submit: { message: `${delivery === 'pickup' ? `Retrait gratuit en boutique : ${pickupText}. Vous serez prévenu(e) par e-mail quand votre commande sera prête. ` : 'Livraison en France métropolitaine (Corse comprise). '}En payant, vous acceptez les conditions générales de vente de L'Atelier d'Isabelle.` },
+        submit: { message: `${delivery === 'pickup' ? `Retrait gratuit en boutique : ${pickupText || 'lieu et moment indiqués par Isabelle par e-mail'}. Vous serez prévenu(e) par e-mail quand votre commande sera prête. ` : 'Livraison en France métropolitaine (Corse comprise). '}En payant, vous acceptez les conditions générales de vente de L'Atelier d'Isabelle.` },
       },
     });
     await db.from('orders').update({ stripe_session_id: session.id }).eq('id', order.id);
