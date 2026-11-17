@@ -5,6 +5,7 @@ import SEO from '@/components/SEO';
 import HeroSlider from '@/components/HeroSlider';
 import ProductCard from '@/components/ProductCard';
 import CallToAction from '@/components/CallToAction';
+import GoogleReviews from '@/components/GoogleReviews';
 import { Appear, Cascade, CascadeItem, RisingTitle, UnveilImage } from '@/components/motion';
 import { usePublicCategories, usePublicCreations } from '@/lib/publicCatalog';
 import { useFaqs, useMaterials, useSiteTexts } from '@/lib/siteData';
@@ -250,6 +251,8 @@ export function HomePage() {
             </div>
           </div>
         </section>
+
+        <GoogleReviews />
 
         {/* Questions fréquentes */}
         {faqs.length > 0 && (

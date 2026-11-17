@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, ArrowRight, Check, CreditCard, ExternalLink, ImagePlus, Mail, Phone, Plus, RefreshCw, RotateCcw, Star, Trash2, X } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
+import { supabase } from '@/lib/supabase';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
 import { editablePages } from '@/config/editableContent';
 import { settingsDefaults, type SiteSettings } from '@/lib/siteData';
@@ -72,6 +73,7 @@ export function AdminSettings() {
       <button className="btn-primary" disabled={saving}><Check className="h-4 w-4" />{saving ? 'Enregistrement…' : 'Enregistrer les paramètres'}</button>
     </form>
     <ShopSettings />
+    <ReviewsSettings />
   </>;
 }
 
@@ -372,6 +374,62 @@ export function ShopSettings() {
       <div className="flex flex-wrap gap-3">
         <button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer la boutique'}</button>
         {status?.configured && <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setBusy(true); setMessage(''); syncAllWithStripe().then((r) => setMessage(`${r.synced ?? 0} création(s) resynchronisée(s).`)).catch((e) => setError((e as Error).message)).finally(() => setBusy(false)); }}><RefreshCw className="h-4 w-4" />Tout resynchroniser</button>}
+      </div>
+    </form>
+  </section>;
+}
+
+// --- Avis Google (page Paramètres) ---
+
+const reviewKeys = ['reviews_enabled', 'google_review_url', 'google_place_id', 'reviews_min_rating'];
+type ReviewsStatus = { configured: boolean; reason?: string; rating?: number | null; count?: number; reviews?: unknown[]; fetched_at?: string; error?: string; stale?: boolean };
+
+export function ReviewsSettings() {
+  const [values, setValues] = useState({ reviews_enabled: 'true', google_review_url: '', google_place_id: '', reviews_min_rating: '4' });
+  const [status, setStatus] = useState<ReviewsStatus | null>(null);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function load(refresh = false) {
+    const { data, error: invokeError } = await supabase.functions.invoke('google-reviews', { body: { refresh } });
+    setStatus(invokeError ? { configured: false, error: 'La fonction des avis ne répond pas.' } : data as ReviewsStatus);
+  }
+  useEffect(() => {
+    fetchSettings(reviewKeys).then((saved) => setValues((current) => ({ ...current, ...saved }))).catch(() => setError('Impossible de charger les réglages des avis.'));
+    void load();
+  }, []);
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true); setError(''); setMessage('');
+    try { await saveSettings(values); await load(true); setMessage('Réglages des avis enregistrés.'); }
+    catch { setError('Les réglages n’ont pas pu être enregistrés.'); }
+    finally { setBusy(false); }
+  }
+
+  return <section className="bg-off-white rounded-soft shadow-soft p-5 sm:p-6 max-w-3xl mt-8">
+    <h2 className="text-xl font-medium mb-1 flex items-center gap-2"><Star className="h-5 w-5 text-terracotta" />Avis Google</h2>
+    <p className="text-sm text-wood-deep/60 mb-5">Section « Avis » de l’accueil : note et derniers avis de votre fiche Google, avec un bouton « Donner mon avis ». Les avis se gèrent et se répondent dans votre fiche Google.</p>
+    {error && <Notice text={error} error />}
+    {message && <Notice text={message} />}
+    <div className={`rounded-soft p-4 mb-5 text-sm ${status?.configured && !status.error ? 'bg-sage/10' : 'bg-amber-50 text-amber-900'}`}>
+      {!status && 'Vérification…'}
+      {status && !status.configured && (status.reason === 'api_key' ? 'Affichage des avis pas encore relié à Google : la clé GOOGLE_PLACES_API_KEY doit être ajoutée dans les secrets des fonctions Supabase. En attendant, le site affiche l’invitation à donner un avis.' : 'Identifiant de la fiche Google manquant ou incorrect.')}
+      {status?.configured && status.error && `Google ne répond pas correctement${status.error !== 'unavailable' ? ` : ${status.error}` : ''}.`}
+      {status?.configured && !status.error && <>Relié à Google : note {status.rating?.toLocaleString('fr-FR') ?? '—'} sur {status.count ?? 0} avis, {status.reviews?.length ?? 0} avis récents récupérés{status.fetched_at ? ` (mis à jour le ${new Date(status.fetched_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })})` : ''}.</>}
+    </div>
+    <form onSubmit={save}>
+      <label className="flex gap-3 items-center text-sm mb-5"><input type="checkbox" className="accent-terracotta" checked={values.reviews_enabled !== 'false'} onChange={(event) => setValues({ ...values, reviews_enabled: event.target.checked ? 'true' : 'false' })} />Afficher la section « Avis » sur l’accueil</label>
+      <Field label="Lien « Donner mon avis »"><input className="input-field" type="url" value={values.google_review_url} onChange={(event) => setValues({ ...values, google_review_url: event.target.value })} placeholder="https://g.page/r/…/review" /></Field>
+      <div className="grid sm:grid-cols-2 gap-x-4">
+        <Field label="Identifiant de la fiche Google (Place ID)"><input className="input-field" value={values.google_place_id} onChange={(event) => setValues({ ...values, google_place_id: event.target.value.trim() })} /></Field>
+        <Field label="Avis affichés"><select className="input-field" value={values.reviews_min_rating} onChange={(event) => setValues({ ...values, reviews_min_rating: event.target.value })}><option value="1">Tous les avis</option><option value="3">3 étoiles et plus</option><option value="4">4 étoiles et plus</option><option value="5">5 étoiles uniquement</option></select></Field>
+      </div>
+      <p className="-mt-2 mb-5 text-xs text-wood-deep/50">La note moyenne et le nombre d’avis affichés sont toujours ceux de Google. Google fournit au maximum les 5 avis les plus pertinents.</p>
+      <div className="flex flex-wrap gap-3">
+        <button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer les avis'}</button>
+        {status?.configured && <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setBusy(true); void load(true).finally(() => setBusy(false)); }}><RotateCcw className="h-4 w-4" />Actualiser maintenant</button>}
       </div>
     </form>
   </section>;
