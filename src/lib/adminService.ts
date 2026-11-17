@@ -123,7 +123,8 @@ export async function uploadImage(file: File, bucket: 'product-images' | 'site-i
     path = `${stem}.webp`;
     const { error } = await supabase.storage.from(bucket).upload(path, full, { contentType: 'image/webp', upsert: false, cacheControl: '31536000' });
     if (error) throw error;
-    if (bucket === 'product-images') {
+    {
+      // Miniature 640 px, utilisée pour les cartes et les petits écrans (thumbUrl).
       const thumb = await toWebp(file, 640);
       await supabase.storage.from(bucket).upload(`${stem}-640.webp`, thumb, { contentType: 'image/webp', upsert: false, cacheControl: '31536000' });
     }

@@ -18,11 +18,16 @@ export function absoluteUrl(pathOrUrl: string) {
 }
 
 /**
- * Miniature 640 px d'une photo de création. Chaque photo WebP du catalogue est
- * stockée avec sa miniature à côté (`nom.webp` et `nom-640.webp`).
+ * Miniature 640 px d'une photo enregistrée dans Supabase. Chaque photo WebP importée par
+ * l'administration est stockée avec sa miniature à côté (`nom.webp` et `nom-640.webp`).
  */
 export function thumbUrl(url: string) {
-  return url.includes('/product-images/') && url.endsWith('.webp') && !url.endsWith('-640.webp') ? url.replace(/\.webp$/, '-640.webp') : url;
+  return /\/storage\/v1\/object\/public\/(product-images|site-images)\//.test(url) && url.endsWith('.webp') && !url.endsWith('-640.webp') ? url.replace(/\.webp$/, '-640.webp') : url;
+}
+
+/** Repli sur l'image d'origine si sa miniature n'existe pas (anciennes photos). */
+export function fallbackToFull(full: string) {
+  return (event: { currentTarget: HTMLImageElement }) => { if (event.currentTarget.src !== full) event.currentTarget.src = full; };
 }
 
 /** Texte alternatif descriptif d'une photo de création. */
@@ -42,4 +47,13 @@ export function metaDescription(text: string, max = 158) {
   const clean = text.replace(/\s+/g, ' ').trim();
   if (clean.length <= max) return clean;
   return `${clean.slice(0, max - 1).replace(/\s+\S*$/, '')}…`;
+}
+
+/**
+ * Attributs d'image adaptés à la taille d'écran : miniature 640 px pour les téléphones et les
+ * petits emplacements, photo complète sinon. Sans miniature connue, l'image d'origine seule.
+ */
+export function responsiveImage(url: string, sizes: string) {
+  const thumb = thumbUrl(url);
+  return thumb === url ? { src: url } : { src: url, srcSet: `${thumb} 640w, ${url} 1600w`, sizes };
 }

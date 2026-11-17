@@ -8,8 +8,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage, ThankYouPage } from '@/pages';
 import { BoutiquePage } from '@/pages/BoutiquePage';
-import { EventsPage } from '@/pages/EventsPage';
-import { CartPage, OrderConfirmationPage } from '@/pages/CartPage';
+// Pages secondaires chargées à la demande : l'accueil et la boutique restent légers.
+const EventsPage = lazy(() => import('@/pages/EventsPage').then((m) => ({ default: m.EventsPage })));
+const CartPage = lazy(() => import('@/pages/CartPage').then((m) => ({ default: m.CartPage })));
+const OrderConfirmationPage = lazy(() => import('@/pages/CartPage').then((m) => ({ default: m.OrderConfirmationPage })));
 // L'administration et les pages légales sont chargées à la demande : le site public reste léger.
 const legal = () => import('@/legalPages');
 const admin = () => import('@/admin');

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
-import { thumbUrl } from '@/lib/seo';
+import { responsiveImage, thumbUrl } from '@/lib/seo';
 
 interface ProductGalleryProps {
   images: string[];
@@ -47,7 +47,9 @@ export default function ProductGallery({ images, alt }: ProductGalleryProps) {
             <AnimatePresence initial={false}>
               <motion.img
                 key={images[active]}
-                src={images[active]}
+                {...responsiveImage(images[active], '(min-width: 1024px) 45vw, 100vw')}
+                width={1200}
+                height={1200}
                 alt={alt}
                 className="absolute inset-0 w-full h-full object-cover [transform-origin:var(--zx,50%)_var(--zy,50%)] transition-transform duration-500 ease-out lg:group-hover:scale-[1.6] motion-reduce:lg:group-hover:scale-100"
                 loading="eager"

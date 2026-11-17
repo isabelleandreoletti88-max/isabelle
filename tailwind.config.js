@@ -21,7 +21,7 @@ export default {
         copper: '#B5651D',           // cuivre brûlé
         'copper-light': '#D4853A',
         'copper-dark': '#7E4212',
-        terracotta: '#C95F3A',       // terracotta de potier, chaud et terieux
+        terracotta: '#B44F2C',       // terracotta de potier (assombri pour un contraste lisible)
         'terracotta-light': '#E07D52',
         'terracotta-dark': '#9A3F1E',
         rust: '#8A3318',             // rouille de fer chaud

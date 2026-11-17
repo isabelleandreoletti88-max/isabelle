@@ -11,4 +11,16 @@ export default defineConfig({
     },
   },
   optimizeDeps: {},
+  build: {
+    rollupOptions: {
+      output: {
+        // Bibliothèques séparées du code du site : elles restent en cache d'une mise en ligne à l'autre.
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+          motion: ['framer-motion'],
+        },
+      },
+    },
+  },
 });

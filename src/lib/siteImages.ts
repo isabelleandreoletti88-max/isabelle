@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { fetchSeasons } from '@/lib/catalogService';
+import { fromSnapshot, withSnapshot } from '@/lib/snapshot';
 
 export type SiteImageKey =
   | 'logo'
@@ -34,7 +35,9 @@ function parseSettingValue(raw: unknown): string {
   return String(raw);
 }
 
-export async function fetchSiteImages(): Promise<Partial<Record<SiteImageKey, string>>> {
+export const fetchSiteImages = () => withSnapshot('siteImages', fetchSiteImagesLive);
+
+async function fetchSiteImagesLive(): Promise<Partial<Record<SiteImageKey, string>>> {
   const { data, error } = await supabase
     .from('site_settings')
     .select('setting_key,setting_value')
@@ -57,8 +60,8 @@ export async function saveSiteImage(key: SiteImageKey, value: string) {
 }
 
 export function useSiteImages() {
-  const [images, setImages] = useState<Record<SiteImageKey, string>>(DEFAULTS);
-  const [loading, setLoading] = useState(true);
+  const [images, setImages] = useState<Record<SiteImageKey, string>>(() => ({ ...DEFAULTS, ...(fromSnapshot<Partial<Record<SiteImageKey, string>>>('siteImages') ?? {}) }));
+  const [loading, setLoading] = useState(() => !fromSnapshot('siteImages'));
   useEffect(() => {
     let active = true;
     fetchSiteImages()
@@ -74,8 +77,12 @@ export function useSiteImages() {
 }
 
 export function useSeasonImages() {
-  const [seasonImages, setSeasonImages] = useState<Record<string, string>>(DEFAULT_SEASON_IMAGES);
-  const [loading, setLoading] = useState(true);
+  const [seasonImages, setSeasonImages] = useState<Record<string, string>>(() => {
+    const mapped: Record<string, string> = { ...DEFAULT_SEASON_IMAGES };
+    for (const row of fromSnapshot<{ slug: string; image: string | null }[]>('seasons') ?? []) if (row.image) mapped[row.slug] = row.image;
+    return mapped;
+  });
+  const [loading, setLoading] = useState(() => !fromSnapshot('seasons'));
   useEffect(() => {
     let active = true;
     fetchSeasons()

@@ -62,7 +62,7 @@ async function fetchCatalog(env) {
     return res.json();
   };
   const [products, categories, faqs, settings, shops] = await Promise.all([
-    get('products?select=slug,name,short_description,price,availability_status,updated_at,categories(name),product_images(public_url,alt_text,is_main)&published=eq.true&order=name'),
+    get('products?select=id,slug,name,short_description,description,price,availability_status,stock_quantity,sell_online,materials,updated_at,categories(name),product_images(public_url,alt_text,is_main,display_order)&published=eq.true&order=name'),
     get('categories?select=slug,name,description,updated_at,products(id)&published=eq.true&products.published=eq.true&order=display_order'),
     get('faqs?select=question,answer&published=eq.true&order=display_order'),
     get('site_settings?select=setting_key,setting_value&is_public=eq.true'),
@@ -116,6 +116,13 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     await page.waitForFunction(() => !/Chargement/.test(document.body.innerText) && document.querySelector('h1'), null, { timeout: 15000 });
     const html = await page.evaluate(() => {
       document.querySelectorAll('[data-prerender-skip]').forEach((el) => el.remove());
+      // Données de la page, réutilisées à l'ouverture pour un affichage immédiat (src/lib/snapshot.ts).
+      document.getElementById('__DATA__')?.remove();
+      const data = document.createElement('script');
+      data.type = 'application/json';
+      data.id = '__DATA__';
+      data.textContent = JSON.stringify(window.__DATA_SNAPSHOT__ || {}).replace(/</g, '\\u003c');
+      document.head.appendChild(data);
       return `<!doctype html>\n${document.documentElement.outerHTML}`;
     });
     const title = await page.title();
@@ -172,6 +179,37 @@ const xml = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
     ...faqs.flatMap((f) => [`### ${f.question}`, f.answer, '']),
   ].join('\n');
   fs.writeFileSync(path.join(DIST, 'llms.txt'), `${llms}\n`);
+
+  // Flux produits Google Merchant Center (annonces gratuites Google Shopping) : créations
+  // achetables en ligne, quand la boutique est ouverte. À déclarer une fois dans Merchant Center :
+  // https://atelier-isabelle.fr/google-merchant.xml
+  const fee = Number(String(settings.shop_shipping_fee || '').replace(',', '.'));
+  const sellable = settings.shop_enabled === 'true' ? products.filter((p) => p.sell_online && Number(p.price) > 0 && ['available', 'made_to_order'].includes(p.availability_status)) : [];
+  const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const items = sellable.map((p) => {
+    const images = [...p.product_images].sort((a, b) => Number(b.is_main) - Number(a.is_main) || a.display_order - b.display_order);
+    const description = String(p.description || p.short_description || p.name).replace(/\s+/g, ' ').trim().slice(0, 4900);
+    return [
+      '    <item>',
+      `      <g:id>${esc(p.id)}</g:id>`,
+      `      <g:title>${esc(`${p.name.trim()} – fait main dans les Vosges`.slice(0, 150))}</g:title>`,
+      `      <g:description>${esc(description)}</g:description>`,
+      `      <g:link>${esc(`${SITE_URL}/creations/${p.slug}`)}</g:link>`,
+      images[0] ? `      <g:image_link>${esc(images[0].public_url)}</g:image_link>` : null,
+      ...images.slice(1, 10).map((img) => `      <g:additional_image_link>${esc(img.public_url)}</g:additional_image_link>`),
+      `      <g:availability>${p.availability_status === 'made_to_order' ? 'backorder' : 'in_stock'}</g:availability>`,
+      `      <g:price>${Number(p.price).toFixed(2)} EUR</g:price>`,
+      '      <g:condition>new</g:condition>',
+      `      <g:brand>${esc(settings.brand_name || "L'Atelier d'Isabelle")}</g:brand>`,
+      '      <g:identifier_exists>no</g:identifier_exists>',
+      p.categories?.name ? `      <g:product_type>${esc(`Décoration faite main > ${p.categories.name.trim()}`)}</g:product_type>` : null,
+      '      <g:google_product_category>696</g:google_product_category>',
+      p.materials?.length ? `      <g:material>${esc(p.materials.join('/'))}</g:material>` : null,
+      settings.shop_home_delivery_enabled !== 'false' && Number.isFinite(fee) ? `      <g:shipping><g:country>FR</g:country><g:service>Livraison à domicile</g:service><g:price>${fee.toFixed(2)} EUR</g:price></g:shipping>` : null,
+      '    </item>',
+    ].filter(Boolean).join('\n');
+  });
+  fs.writeFileSync(path.join(DIST, 'google-merchant.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n  <channel>\n    <title>${esc(settings.brand_name || "L'Atelier d'Isabelle")} — créations faites main</title>\n    <link>${SITE_URL}</link>\n    <description>Décorations et cadeaux faits main dans les Vosges</description>\n${items.join('\n')}\n  </channel>\n</rss>\n`);
 
   console.log(`\n${rendered.length} pages pré-générées, sitemap.xml (${routes.length} adresses) et robots.txt écrits.`);
 })().catch((error) => {

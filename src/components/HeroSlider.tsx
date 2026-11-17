@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Pause, Play } from 'lucide-react';
 import { fetchHeroSlides, type HeroSlideRow } from '@/lib/catalogService';
+import { fromSnapshot } from '@/lib/snapshot';
+import { isPrerender } from '@/components/motion';
 
 interface Chapter {
   chapter: string;
@@ -146,12 +148,27 @@ function mapSlide(s: HeroSlideRow): Chapter {
 
 export default function HeroSlider() {
   const reduceMotion = useReducedMotion();
-  const [chapters, setChapters] = useState<Chapter[]>(defaultChapters);
+  const [chapters, setChapters] = useState<Chapter[]>(() => {
+    const saved = (fromSnapshot<HeroSlideRow[]>('heroSlides') ?? []).filter((r) => r.published).map(mapSlide);
+    return saved.length ? saved : defaultChapters;
+  });
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [progress, setProgress] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
+  // La vidéo YouTube (plus d'1 Mo) n'est chargée qu'une fois la page affichée, sur grand écran,
+  // ou à la demande sur téléphone : la bannière s'affiche tout de suite avec son image.
+  const [videoAllowed, setVideoAllowed] = useState(false);
+  useEffect(() => {
+    if (isPrerender || reduceMotion) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData || !window.matchMedia('(min-width: 1024px)').matches) return;
+    let timer = 0;
+    const start = () => { timer = window.setTimeout(() => setVideoAllowed(true), 2500); };
+    if (document.readyState === 'complete') start(); else window.addEventListener('load', start, { once: true });
+    return () => { window.clearTimeout(timer); window.removeEventListener('load', start); };
+  }, [reduceMotion]);
   const rafRef = useRef<number | null>(null);
   // Le premier chapitre est visible d'emblée (page pré-générée) ; seuls les changements s'animent.
   const firstRender = useRef(true);
@@ -302,6 +319,8 @@ export default function HeroSlider() {
               >
                 <motion.img
                   src={poster}
+                  srcSet={current.videoId ? `https://img.youtube.com/vi/${current.videoId}/hqdefault.jpg 480w, ${poster} 1280w` : undefined}
+                  sizes={current.videoId ? '(min-width: 1024px) 50vw, 100vw' : undefined}
                   alt={current.videoId ? '' : current.title}
                   className="absolute inset-0 h-full w-full object-cover"
                   initial={firstRender.current || reduceMotion ? false : { scale: 1.12 }}
@@ -310,7 +329,12 @@ export default function HeroSlider() {
                   onError={(e) => { if (current.videoId && !e.currentTarget.src.includes('hqdefault')) e.currentTarget.src = `https://img.youtube.com/vi/${current.videoId}/hqdefault.jpg`; }}
                   fetchPriority={safeIndex === 0 ? 'high' : 'auto'}
                 />
-                {current.videoId && (
+                {current.videoId && !videoAllowed && !isPrerender && (
+                  <button type="button" onClick={() => setVideoAllowed(true)} className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-pill bg-off-white/95 px-4 min-h-[44px] text-sm font-medium text-wood-deep shadow-card hover:bg-off-white">
+                    <Play className="h-4 w-4 text-terracotta" />Voir la vidéo
+                  </button>
+                )}
+                {current.videoId && videoAllowed && (
                   <iframe
                     className={`pointer-events-none absolute top-0 left-1/2 h-full aspect-video -translate-x-1/2 transition-opacity duration-700 ${videoReady ? 'opacity-100' : 'opacity-0'}`}
                     src={`https://www.youtube-nocookie.com/embed/${current.videoId}?autoplay=1&mute=1&loop=1&playlist=${current.videoId}&controls=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3`}

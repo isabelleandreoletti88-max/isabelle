@@ -2,6 +2,9 @@ import { siteConfig } from '@/config/site';
 import type { Creation } from '@/types';
 import { SITE_URL, absoluteUrl } from '@/lib/seo';
 
+/** Fiche Google de l'atelier (avis, itinéraire). */
+export const GOOGLE_MAPS_URL = 'https://www.google.com/maps/place/?q=place_id:ChIJt3NkyLznk0cR00JxaR47pM4';
+
 /** Villes vosgiennes où l'atelier est présent (boutiques partenaires) et alentours. */
 const AREA_SERVED = ['Saint-Dié-des-Vosges', "Raon-l'Étape", 'Épinal', 'Gérardmer', 'Rambervillers', 'Baccarat', 'Remiremont', 'Lunéville'];
 
@@ -26,7 +29,8 @@ export function storeJsonLd(image?: string) {
     geo: { '@type': 'GeoCoordinates', latitude: 48.2847, longitude: 6.9493 },
     areaServed: [{ '@type': 'AdministrativeArea', name: 'Vosges' }, ...AREA_SERVED.map((name) => ({ '@type': 'City', name })), { '@type': 'Country', name: 'France' }],
     knowsAbout: ['décoration faite main', 'cadeau personnalisé', 'galets peints', 'création en papier', 'fil de fer', 'artisanat vosgien'],
-    sameAs: [siteConfig.facebook, siteConfig.instagram].filter(Boolean),
+    hasMap: GOOGLE_MAPS_URL,
+    sameAs: [siteConfig.facebook, siteConfig.instagram, GOOGLE_MAPS_URL].filter(Boolean),
     makesOffer: { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Créations décoratives personnalisées faites main dans les Vosges' } },
   };
 }
@@ -92,7 +96,39 @@ const availability: Record<string, string> = {
   unavailable: 'https://schema.org/OutOfStock',
 };
 
-export function productJsonLd(creation: Creation) {
+/** Conditions de vente en ligne, reprises par Google (fiches produits et annonces gratuites). */
+export type OnlineSale = { shippingFee: number | null; homeDelivery: boolean; pickup: boolean };
+
+function shippingDetails(sale: OnlineSale) {
+  const destination = { '@type': 'DefinedRegion', addressCountry: 'FR' };
+  const options = [];
+  if (sale.homeDelivery && sale.shippingFee !== null) {
+    options.push({
+      '@type': 'OfferShippingDetails',
+      shippingRate: { '@type': 'MonetaryAmount', value: sale.shippingFee.toFixed(2), currency: 'EUR' },
+      shippingDestination: destination,
+      deliveryTime: {
+        '@type': 'ShippingDeliveryTime',
+        handlingTime: { '@type': 'QuantitativeValue', minValue: 2, maxValue: 5, unitCode: 'DAY' },
+        transitTime: { '@type': 'QuantitativeValue', minValue: 2, maxValue: 4, unitCode: 'DAY' },
+      },
+    });
+  }
+  if (sale.pickup) options.push({ '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: '0.00', currency: 'EUR' }, shippingDestination: destination, doesNotShip: false, shippingLabel: 'Retrait gratuit en boutique' });
+  return options.length ? options : undefined;
+}
+
+const returnPolicy = {
+  '@type': 'MerchantReturnPolicy',
+  applicableCountry: 'FR',
+  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+  merchantReturnDays: 14,
+  returnMethod: 'https://schema.org/ReturnByMail',
+  returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+  merchantReturnLink: `${SITE_URL}/retours-remboursements`,
+};
+
+export function productJsonLd(creation: Creation, sale?: OnlineSale) {
   const url = `${SITE_URL}/creations/${creation.slug}`;
   return {
     '@context': 'https://schema.org',
@@ -115,6 +151,7 @@ export function productJsonLd(creation: Creation) {
       availability: availability[creation.availability] || 'https://schema.org/InStock',
       itemCondition: 'https://schema.org/NewCondition',
       seller: { '@id': `${SITE_URL}/#atelier` },
+      ...(sale ? { shippingDetails: shippingDetails(sale), hasMerchantReturnPolicy: returnPolicy } : {}),
     } : undefined,
   };
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fromSnapshot, withSnapshot } from '@/lib/snapshot';
 import { siteConfig } from '@/config/site';
 import { materials as defaultMaterials } from '@/config/catalog';
 import { editableTexts } from '@/config/editableContent';
@@ -9,16 +10,17 @@ import type { MaterialInfo } from '@/types';
  * Données du site modifiables depuis l'administration : coordonnées, textes, matières.
  * Chaque requête n'est faite qu'une fois par visite, puis partagée entre les composants.
  */
-function cached<T>(load: () => Promise<T>) {
+function cached<T>(key: string, load: () => Promise<T>) {
   let promise: Promise<T> | null = null;
   return {
-    get: () => (promise ??= load().catch((error) => { promise = null; throw error; })),
+    key,
+    get: () => (promise ??= withSnapshot(key, load).catch((error) => { promise = null; throw error; })),
     clear: () => { promise = null; },
   };
 }
 
-function useCached<T>(source: { get: () => Promise<T> }, fallback: T) {
-  const [value, setValue] = useState<T>(fallback);
+function useCached<T>(source: { key: string; get: () => Promise<T> }, fallback: T) {
+  const [value, setValue] = useState<T>(() => fromSnapshot<T>(source.key) ?? fallback);
   useEffect(() => {
     let active = true;
     source.get().then((data) => { if (active) setValue(data); }).catch(() => {});
@@ -79,7 +81,7 @@ export const settingsDefaults: SiteSettings = {
   reviews_min_rating: '4',
 };
 
-export const settingsSource = cached(async () => {
+export const settingsSource = cached('settings', async () => {
   const { data, error } = await supabase.from('site_settings').select('setting_key,setting_value').in('setting_key', Object.keys(settingsDefaults));
   if (error) throw error;
   const settings = { ...settingsDefaults };
@@ -98,7 +100,7 @@ export function useSiteSettings() {
 
 // --- Textes des pages (table site_contents) ---
 
-export const contentsSource = cached(async () => {
+export const contentsSource = cached('contents', async () => {
   const { data, error } = await supabase.from('site_contents').select('page,section,content_key,value');
   if (error) throw error;
   const map: Record<string, string> = {};
@@ -114,7 +116,7 @@ export function useSiteTexts() {
 
 // --- Matières (table materials) ---
 
-export const materialsSource = cached(async () => {
+export const materialsSource = cached('materials', async () => {
   const { data, error } = await supabase.from('materials').select('slug,name,description,image').eq('published', true).order('display_order');
   if (error) throw error;
   return (data ?? []).map((row) => ({ slug: row.slug, name: row.name, description: row.description, image: row.image || '' })) as MaterialInfo[];
@@ -128,7 +130,7 @@ export function useMaterials() {
 
 export type Faq = { id: string; question: string; answer: string };
 
-export const faqsSource = cached(async () => {
+export const faqsSource = cached('faqs', async () => {
   const { data, error } = await supabase.from('faqs').select('id,question,answer').eq('published', true).order('display_order');
   if (error) throw error;
   return (data ?? []) as Faq[];
@@ -144,7 +146,7 @@ export type GoogleReview = { id: string; rating: number; text: string; relative_
 export type GoogleReviews = { configured: boolean; rating: number | null; count: number; maps_uri: string; reviews: GoogleReview[] };
 const emptyReviews: GoogleReviews = { configured: false, rating: null, count: 0, maps_uri: '', reviews: [] };
 
-export const reviewsSource = cached(async () => {
+export const reviewsSource = cached('reviews', async () => {
   const { data, error } = await supabase.functions.invoke('google-reviews', { body: {} });
   if (error || !data) return emptyReviews;
   return { ...emptyReviews, ...(data as Partial<GoogleReviews>), reviews: (data as GoogleReviews).reviews ?? [] } as GoogleReviews;

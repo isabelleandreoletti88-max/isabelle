@@ -1,7 +1,8 @@
+import { withSnapshot } from '@/lib/snapshot';
 import { supabase } from '@/lib/supabase';
 
-export async function fetchPublicProducts() {
-  const { data, error } = await supabase.from('products').select('*, categories(name,slug), product_images(id,storage_path,public_url,alt_text,display_order,is_main), product_seasons(seasons(name,slug))').eq('published', true).order('display_order');
+async function fetchPublicProductsLive() {
+  const { data, error } = await supabase.from('products').select('id,slug,name,short_description,description,price,price_from,previous_slug,seo_title,seo_description,created_at,updated_at,sell_online,stock_quantity,materials,dimensions,colors,personalizable,availability_status,production_time,maintenance_advice,featured,display_order,categories(name,slug),product_images(public_url,alt_text,display_order,is_main),product_seasons(seasons(slug))').eq('published', true).order('display_order');
   if (error) throw new Error('Impossible de charger les créations.');
   return data ?? [];
 }
@@ -23,13 +24,13 @@ export async function fetchAdminStats() {
   return { total: total ?? 0, published: published ?? 0, drafts: drafts ?? 0, unavailable: unavailable ?? 0, requests: requests ?? 0 };
 }
 
-export async function fetchCategories() {
+async function fetchCategoriesLive() {
   const { data, error } = await supabase.from('categories').select('*').order('display_order');
   if (error) throw new Error('Impossible de charger les catégories.');
   return data ?? [];
 }
 
-export async function fetchSeasons() {
+async function fetchSeasonsLive() {
   const { data, error } = await supabase.from('seasons').select('*').order('display_order');
   if (error) throw new Error('Impossible de charger les saisons.');
   return data ?? [];
@@ -87,7 +88,7 @@ export type HeroSlideRow = {
   published: boolean;
 };
 
-export async function fetchHeroSlides(): Promise<HeroSlideRow[]> {
+async function fetchHeroSlidesLive(): Promise<HeroSlideRow[]> {
   const { data, error } = await supabase.from('hero_slides').select('*').order('display_order');
   if (error) throw new Error('Impossible de charger les slides.');
   return (data ?? []) as HeroSlideRow[];
@@ -143,7 +144,7 @@ export type EventRow = {
   published: boolean;
 };
 
-export async function fetchPublicEvents(): Promise<EventRow[]> {
+async function fetchPublicEventsLive(): Promise<EventRow[]> {
   const { data, error } = await supabase.from('events').select('*').eq('published', true).order('is_permanent', { ascending: false }).order('display_order');
   if (error) throw new Error('Impossible de charger les événements.');
   return (data ?? []) as EventRow[];
@@ -178,3 +179,9 @@ export async function deleteEvent(id: string) {
   const { error } = await supabase.from('events').delete().eq('id', id);
   if (error) throw new Error('L’événement n’a pas pu être supprimé.');
 }
+
+export const fetchPublicProducts = () => withSnapshot('products', fetchPublicProductsLive);
+export const fetchCategories = () => withSnapshot('categories', fetchCategoriesLive);
+export const fetchSeasons = () => withSnapshot('seasons', fetchSeasonsLive);
+export const fetchHeroSlides = () => withSnapshot('heroSlides', fetchHeroSlidesLive);
+export const fetchPublicEvents = () => withSnapshot('events', fetchPublicEventsLive);

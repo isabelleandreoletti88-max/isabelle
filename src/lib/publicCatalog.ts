@@ -1,3 +1,4 @@
+import { fromSnapshot } from '@/lib/snapshot';
 import { useEffect, useState } from 'react';
 import { fetchPublicProducts, fetchCategories } from '@/lib/catalogService';
 import type { Category, Creation, Material, Season } from '@/types';
@@ -75,12 +76,12 @@ function mapProduct(row: ProductRow): Creation {
 }
 
 export function usePublicCreations() {
-  const [creations, setCreations] = useState<Creation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [creations, setCreations] = useState<Creation[]>(() => (fromSnapshot<ProductRow[]>('products') ?? []).map(mapProduct));
+  const [loading, setLoading] = useState(() => !fromSnapshot('products'));
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    fetchPublicProducts().then((rows) => { if (active) setCreations((rows as ProductRow[]).map(mapProduct)); }).catch(() => { if (active) setError('Les créations ne sont pas disponibles pour le moment.'); }).finally(() => { if (active) setLoading(false); });
+    fetchPublicProducts().then((rows) => { if (active) setCreations((rows as unknown as ProductRow[]).map(mapProduct)); }).catch(() => { if (active) setError('Les créations ne sont pas disponibles pour le moment.'); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
   return { creations, loading, error };
@@ -89,13 +90,14 @@ export function usePublicCreations() {
 type CategoryRow = { id: string; name: string; slug: string; description: string; image_url: string | null; published: boolean; display_order: number };
 
 export function usePublicCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const toCategory = (r: CategoryRow): Category => ({ slug: r.slug as Category['slug'], name: r.name, description: r.description, emoji: '', image: r.image_url || undefined });
+  const [categories, setCategories] = useState<Category[]>(() => (fromSnapshot<CategoryRow[]>('categories') ?? []).map(toCategory));
+  const [loading, setLoading] = useState(() => !fromSnapshot('categories'));
   useEffect(() => {
     let active = true;
     fetchCategories().then((rows) => {
       if (!active) return;
-      setCategories((rows as CategoryRow[]).map((r) => ({ slug: r.slug as Category['slug'], name: r.name, description: r.description, emoji: '', image: r.image_url || undefined })));
+      setCategories((rows as CategoryRow[]).map(toCategory));
     }).catch(() => {}).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);

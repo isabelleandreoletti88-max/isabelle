@@ -28,8 +28,8 @@
   /* Barre de défilement et curseur aux couleurs de l'atelier */
   html {
     scrollbar-color: #C9A27A transparent;
-    accent-color: #C95F3A;
-    caret-color: #C95F3A;
+    accent-color: #B44F2C;
+    caret-color: #B44F2C;
   }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -47,7 +47,7 @@
   }
 
   ::selection {
-    background-color: #C95F3A;
+    background-color: #B44F2C;
     color: #FEFBF3;
   }
 }

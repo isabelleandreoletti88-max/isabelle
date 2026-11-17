@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { responsiveImage } from '@/lib/seo';
 
 /** Courbe de décélération commune à tout le site. */
 export const EASE = [0.16, 1, 0.3, 1] as const;
@@ -40,10 +41,10 @@ export function UnveilImage({ src, alt, className = '', imgClassName = '', paral
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const y = useTransform(scrollYProgress, [0, 1], [`${-parallax}%`, `${parallax}%`]);
-  if (still) return <div className={`overflow-hidden ${className}`}><img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" className={`h-full w-full object-cover ${imgClassName}`} /></div>;
+  if (still) return <div className={`overflow-hidden ${className}`}><img {...responsiveImage(src, '(min-width: 1024px) 55vw, 100vw')} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" className={`h-full w-full object-cover ${imgClassName}`} /></div>;
   return (
     <motion.div ref={ref} className={`overflow-hidden ${className}`} initial={{ clipPath: 'inset(0% 0% 100% 0%)' }} whileInView={{ clipPath: 'inset(0% 0% 0% 0%)' }} viewport={{ once: true, margin: '0px 0px -10% 0px' }} transition={{ duration: 1.2, ease: EASE }}>
-      <motion.img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" className={`h-full w-full object-cover ${imgClassName}`} style={parallax ? { y, scale: 1 + parallax / 45 } : undefined} initial={{ scale: 1.18 }} whileInView={{ scale: parallax ? 1 + parallax / 45 : 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
+      <motion.img {...responsiveImage(src, '(min-width: 1024px) 55vw, 100vw')} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" className={`h-full w-full object-cover ${imgClassName}`} style={parallax ? { y, scale: 1 + parallax / 45 } : undefined} initial={{ scale: 1.18 }} whileInView={{ scale: parallax ? 1 + parallax / 45 : 1 }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
     </motion.div>
   );
 }

@@ -17,7 +17,7 @@ export default function Footer() {
           {/* Marque */}
           <div className="lg:col-span-1">
             <img
-              src={images.logo}
+              src={images.header_logo}
               alt={`Logo ${siteConfig.name}`}
               className="h-20 w-20 mb-5 rounded-full bg-cream p-1 object-contain shadow-soft"
             />

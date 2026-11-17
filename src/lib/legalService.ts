@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { fromSnapshot, withSnapshot } from '@/lib/snapshot';
 
 export type LegalSetting = {
   setting_key: string;
@@ -31,21 +32,23 @@ function asString(value: unknown): string {
   try { return JSON.stringify(value); } catch { return ''; }
 }
 
+const legalSettingsLive = async (): Promise<LegalSettingsMap> => {
+  const { data, error } = await supabase.from('legal_settings').select('setting_key,setting_value,category,is_required,is_completed');
+  if (error) throw error;
+  const map: LegalSettingsMap = {};
+  for (const row of (data as LegalSetting[] | null) ?? []) map[row.setting_key] = asString(row.setting_value);
+  return map;
+};
+
 export function useLegalSettings() {
-  const [settings, setSettings] = useState<LegalSettingsMap>({});
-  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<LegalSettingsMap>(() => fromSnapshot<LegalSettingsMap>('legalSettings') ?? {});
+  const [loading, setLoading] = useState(() => !fromSnapshot('legalSettings'));
   const [error, setError] = useState('');
   useEffect(() => {
     let active = true;
-    supabase.from('legal_settings').select('setting_key,setting_value,category,is_required,is_completed')
-      .then(({ data, error: err }) => {
-        if (!active) return;
-        if (err) { setError('Impossible de charger les paramètres légaux.'); setLoading(false); return; }
-        const map: LegalSettingsMap = {};
-        for (const row of (data as LegalSetting[] | null) ?? []) map[row.setting_key] = asString(row.setting_value);
-        setSettings(map);
-        setLoading(false);
-      });
+    withSnapshot('legalSettings', legalSettingsLive)
+      .then((map) => { if (active) { setSettings(map); setLoading(false); } })
+      .catch(() => { if (active) { setError('Impossible de charger les paramètres légaux.'); setLoading(false); } });
     return () => { active = false; };
   }, []);
   return { settings, loading, error };

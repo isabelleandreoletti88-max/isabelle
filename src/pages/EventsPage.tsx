@@ -1,3 +1,5 @@
+import { responsiveImage } from '@/lib/seo';
+import { fromSnapshot } from '@/lib/snapshot';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ExternalLink, MapPin } from 'lucide-react';
@@ -19,8 +21,8 @@ function formatDateRange(start: string | null, end: string | null): string {
 export function EventsPage() {
   const settings = useSiteSettings();
   const text = useSiteTexts();
-  const [events, setEvents] = useState<EventRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState<EventRow[]>(() => fromSnapshot<EventRow[]>('events') ?? []);
+  const [loading, setLoading] = useState(() => !fromSnapshot('events'));
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export function EventsPage() {
                   <article key={event.id} className="card card-hover overflow-hidden">
                     <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-sage/25 to-honey/20">
                       {event.image ? (
-                        <img src={event.image} alt={event.title} className="w-full h-full object-cover" loading="lazy" />
+                        <img {...responsiveImage(event.image!, '(min-width: 1024px) 40vw, 100vw')} alt={event.title} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="flex items-center justify-center h-full"><Calendar className="h-16 w-16 text-sage-dark" /></div>
                       )}
@@ -100,7 +102,7 @@ export function EventsPage() {
                     <article key={event.id} className="card card-hover overflow-hidden">
                       <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-honey/20 to-terracotta/20">
                         {event.image ? (
-                          <img src={event.image} alt={event.title} className="w-full h-full object-cover" loading="lazy" />
+                          <img {...responsiveImage(event.image!, '(min-width: 1024px) 40vw, 100vw')} alt={event.title} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <div className="flex items-center justify-center h-full"><Calendar className="h-16 w-16 text-terracotta" /></div>
                         )}

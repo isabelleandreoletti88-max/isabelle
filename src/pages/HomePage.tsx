@@ -11,7 +11,7 @@ import { usePublicCategories, usePublicCreations } from '@/lib/publicCatalog';
 import { useFaqs, useMaterials, useSiteTexts } from '@/lib/siteData';
 import { useSeasonImages, useSiteImages } from '@/lib/siteImages';
 import { faqJsonLd, storeJsonLd, websiteJsonLd } from '@/lib/structuredData';
-import { formatPrice, thumbUrl } from '@/lib/seo';
+import { fallbackToFull, formatPrice, responsiveImage, thumbUrl } from '@/lib/seo';
 import { seasons } from '@/config/catalog';
 import { siteConfig } from '@/config/site';
 import type { Creation } from '@/types';
@@ -45,7 +45,7 @@ function Featured({ creations }: { creations: Creation[] }) {
       <Appear className="col-span-2 lg:col-span-6">
         <article className="group relative">
           <div className="relative overflow-hidden rounded-soft-lg bg-sand-light shadow-card aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5]">
-            <img src={first.mainImage} alt={first.mainImageAlt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]" />
+            <img {...responsiveImage(first.mainImage, '(min-width: 1024px) 45vw, 100vw')} alt={first.mainImageAlt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wood-darker/80 via-wood-darker/35 to-transparent p-5 sm:p-8 pt-24">
               <h3 className="font-serif text-2xl sm:text-4xl text-off-white leading-tight">
                 <Link to={`/creations/${first.slug}`} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-off-white">{first.name}</Link>
@@ -119,7 +119,7 @@ function SeasonsPanels() {
             onFocus={() => setOpen(i)}
             className={`group relative overflow-hidden rounded-soft-lg bg-wood-deep min-h-[13rem] lg:min-h-0 transition-[flex-grow] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${active ? 'lg:grow-[3.2]' : 'lg:grow'} lg:basis-0`}
           >
-            <img src={seasonImages[season.slug] || season.image} alt="" loading="lazy" decoding="async" className={`absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${active ? 'lg:scale-100 lg:opacity-100' : 'lg:scale-110 lg:opacity-70'}`} />
+            <img {...responsiveImage(seasonImages[season.slug] || season.image, '(min-width: 1024px) 50vw, 100vw')} alt="" loading="lazy" decoding="async" className={`absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${active ? 'lg:scale-100 lg:opacity-100' : 'lg:scale-110 lg:opacity-70'}`} />
             <span className="absolute inset-0 bg-gradient-to-t from-wood-darker/90 via-wood-darker/55 to-wood-darker/15 lg:via-wood-darker/20 lg:to-transparent" aria-hidden="true" />
             <span className="absolute inset-x-0 bottom-0 p-5 sm:p-7 text-off-white">
               <span className="block font-serif text-2xl sm:text-3xl lg:text-[1.7rem] leading-tight">{season.name}</span>
@@ -204,7 +204,7 @@ export function HomePage() {
               {materials.map((m, i) => (
                 <CascadeItem key={m.slug} className={i % 2 ? 'lg:mt-14' : ''}>
                   <div className="overflow-hidden rounded-t-[10rem] rounded-b-soft-lg aspect-[3/4] bg-wood">
-                    <img src={m.image} alt={m.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.06]" />
+                    <img src={thumbUrl(m.image)} onError={fallbackToFull(m.image)} alt={m.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.06]" />
                   </div>
                   <h3 className="mt-5 font-serif text-2xl text-cream">{m.name}</h3>
                   <p className="mt-2 text-sm text-cream/70 leading-relaxed">{m.description}</p>

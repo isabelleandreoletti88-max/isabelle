@@ -99,7 +99,7 @@ export function BoutiquePage() {
             {season && !seasonHasItems && !loading && <p className="mb-6 text-wood-deep/70">Les créations « {season.name} » arrivent bientôt. En attendant, voici toutes les créations de l’atelier.</p>}
             {season && seasonHasItems && <p className="mb-6"><Link to="/boutique" className="inline-flex items-center gap-2 min-h-[40px] rounded-pill bg-wood-deep text-off-white pl-4 pr-3 text-sm font-medium hover:bg-terracotta transition-colors">Saison : {season.name} <X className="h-4 w-4" aria-label="Retirer le filtre" /></Link></p>}
             {filtered.length ? (
-              <ProductGrid creations={filtered} />
+              <><h2 className="sr-only">{activeCategory ? `Créations de la collection ${activeCategory.name.trim()}` : 'Toutes les créations'}</h2><ProductGrid creations={filtered} /></>
             ) : (
               <div className="text-center py-16 rounded-soft-lg bg-off-white">
                 <Sparkles className="h-10 w-10 text-terracotta mx-auto mb-4" />
