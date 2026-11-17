@@ -48,6 +48,9 @@ export type SiteSettings = {
   shop_pickup_name: string;
   shop_pickup_address: string;
   shop_pickup_instructions: string;
+  google_review_url: string;
+  reviews_enabled: string;
+  reviews_min_rating: string;
 };
 
 export const settingsDefaults: SiteSettings = {
@@ -69,6 +72,9 @@ export const settingsDefaults: SiteSettings = {
   shop_pickup_name: '',
   shop_pickup_address: '',
   shop_pickup_instructions: '',
+  google_review_url: 'https://g.page/r/CdNCcWkeO6TOEBM/review',
+  reviews_enabled: 'true',
+  reviews_min_rating: '4',
 };
 
 export const settingsSource = cached(async () => {
@@ -128,4 +134,20 @@ export const faqsSource = cached(async () => {
 
 export function useFaqs() {
   return useCached(faqsSource, [] as Faq[]);
+}
+
+// --- Avis Google (fonction serveur google-reviews, cache 12 h) ---
+
+export type GoogleReview = { id: string; rating: number; text: string; relative_time: string; publish_time: string | null; review_uri: string; author: string; author_uri: string; author_photo: string };
+export type GoogleReviews = { configured: boolean; rating: number | null; count: number; maps_uri: string; reviews: GoogleReview[] };
+const emptyReviews: GoogleReviews = { configured: false, rating: null, count: 0, maps_uri: '', reviews: [] };
+
+export const reviewsSource = cached(async () => {
+  const { data, error } = await supabase.functions.invoke('google-reviews', { body: {} });
+  if (error || !data) return emptyReviews;
+  return { ...emptyReviews, ...(data as Partial<GoogleReviews>), reviews: (data as GoogleReviews).reviews ?? [] } as GoogleReviews;
+});
+
+export function useGoogleReviews() {
+  return useCached(reviewsSource, emptyReviews);
 }
