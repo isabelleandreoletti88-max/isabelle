@@ -2,6 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /merci
+Disallow: /panier
+Disallow: /commande
 
 User-agent: GPTBot
 Allow: /
