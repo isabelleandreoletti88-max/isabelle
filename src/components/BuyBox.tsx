@@ -6,6 +6,7 @@ import type { Creation } from '@/types';
 import { maxQuantity, useCart, useShopAccess } from '@/lib/cart';
 import { useSiteSettings } from '@/lib/siteData';
 import { formatPrice } from '@/lib/seo';
+import { pickupAvailable, scheduleLines } from '@/lib/pickupSchedule';
 
 /** Montant saisi dans l'administration (« 5,90 ») ; null si absent ou invalide. */
 export function parseFee(value: string) {
@@ -25,7 +26,8 @@ export default function BuyBox({ creation }: { creation: Creation }) {
   const left = Math.max(0, max - inCart);
   const fee = parseFee(settings.shop_shipping_fee);
   const home = settings.shop_home_delivery_enabled !== 'false';
-  const pickup = settings.shop_pickup_enabled !== 'false' && Boolean(settings.shop_pickup_address);
+  const pickup = pickupAvailable(settings);
+  const pickupDays = scheduleLines(settings.shop_pickup_schedule);
 
   function addToCart() {
     add(creation.id, Math.min(quantity, left), max);
@@ -62,7 +64,7 @@ export default function BuyBox({ creation }: { creation: Creation }) {
       </AnimatePresence>
       <ul className="mt-4 space-y-1.5 text-sm text-wood-deep/70">
         {home && <li className="flex gap-2"><Truck className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" />Livraison à domicile en France métropolitaine{fee !== null ? ` : ${fee > 0 ? formatPrice(fee) : 'offerte'} par commande` : ''}</li>}
-        {pickup && <li className="flex gap-2"><Store className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" />Retrait gratuit en boutique{settings.shop_pickup_name ? ` — ${settings.shop_pickup_name}` : ''}</li>}
+        {pickup && <li className="flex gap-2"><Store className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" /><span>Retrait gratuit en boutique{settings.shop_pickup_name ? ` — ${settings.shop_pickup_name}` : ''}{pickupDays.length ? <span className="block text-wood-deep/55">{pickupDays.join(' · ')}</span> : null}</span></li>}
         <li className="flex gap-2"><Lock className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" /><span>Paiement sécurisé par Stripe. 14 jours pour changer d’avis, selon nos <Link to="/conditions-generales-de-vente" className="underline hover:text-terracotta">conditions de vente</Link>.</span></li>
       </ul>
     </div>

@@ -17,18 +17,27 @@ export type ShopSettings = {
   pickupName: string;
   pickupAddress: string;
   pickupInstructions: string;
+  pickupSchedule: string[];
   notificationEmail: string;
   vatFranchise: boolean;
   brandName: string;
 };
 
-const SHOP_KEYS = ['shop_enabled', 'shop_shipping_fee', 'shop_shipping_note', 'shop_home_delivery_enabled', 'shop_pickup_enabled', 'shop_pickup_name', 'shop_pickup_address', 'shop_pickup_instructions', 'notification_email', 'brand_name'];
+const SHOP_KEYS = ['shop_enabled', 'shop_shipping_fee', 'shop_shipping_note', 'shop_home_delivery_enabled', 'shop_pickup_enabled', 'shop_pickup_name', 'shop_pickup_address', 'shop_pickup_instructions', 'shop_pickup_schedule', 'notification_email', 'brand_name'];
 
 /** Convertit « 5,90 » ou « 5.90 » en centimes ; null si la valeur n'est pas un montant valable. */
 export function toCents(value: unknown): number | null {
   const n = Number(String(value ?? '').trim().replace(',', '.'));
   if (!Number.isFinite(n) || n < 0 || n > 1000) return null;
   return Math.round(n * 100);
+}
+
+/** Jours de présence au lieu de retrait (réglage JSON [{ day, open, hours }]) : « Mercredi : 14 h – 18 h ». */
+function scheduleLines(value: string | undefined): string[] {
+  try {
+    const days = JSON.parse(value || '[]') as { day?: string; open?: boolean; hours?: string }[];
+    return Array.isArray(days) ? days.filter((d) => d?.open && d.day).map((d) => (d.hours?.trim() ? `${d.day} : ${d.hours.trim()}` : String(d.day))) : [];
+  } catch { return []; }
 }
 
 export async function loadShopSettings(db: SupabaseClient): Promise<ShopSettings> {
@@ -43,10 +52,11 @@ export async function loadShopSettings(db: SupabaseClient): Promise<ShopSettings
     homeDelivery: map.shop_home_delivery_enabled !== 'false',
     shippingCents: toCents(map.shop_shipping_fee) ?? 590,
     shippingNote: map.shop_shipping_note || '',
-    pickup: map.shop_pickup_enabled !== 'false' && Boolean(map.shop_pickup_address?.trim()),
+    pickup: map.shop_pickup_enabled !== 'false' && Boolean(map.shop_pickup_address?.trim() || map.shop_pickup_name?.trim()),
     pickupName: map.shop_pickup_name?.trim() || '',
     pickupAddress: map.shop_pickup_address?.trim() || '',
     pickupInstructions: map.shop_pickup_instructions?.trim() || '',
+    pickupSchedule: scheduleLines(map.shop_pickup_schedule),
     notificationEmail: (map.notification_email || smtpUser()).trim(),
     vatFranchise: legalMap.editor_vat_franchise === 'true',
     brandName: map.brand_name || "L'Atelier d'Isabelle",
@@ -62,7 +72,7 @@ export type Address = { line1?: string | null; line2?: string | null; postal_cod
 export type Order = {
   id: string; order_number: string | null; public_token: string; payment_status: string; fulfillment_status: string; delivery_method: 'shipping' | 'pickup';
   customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null; customer_note: string | null;
-  shipping_name: string | null; shipping_address: Address | null; pickup_location: { name?: string; address?: string; instructions?: string } | null;
+  shipping_name: string | null; shipping_address: Address | null; pickup_location: { name?: string; address?: string; instructions?: string; schedule?: string[] } | null;
   subtotal_amount: number; shipping_amount: number; total_amount: number; amount_paid: number | null;
   stripe_session_id: string | null; stripe_payment_intent_id: string | null; carrier: string | null; tracking_number: string | null;
   alerts: string[]; created_at: string; paid_at: string | null;
@@ -134,9 +144,10 @@ function receptionBlock(order: Order) {
     };
   }
   const place = order.pickup_location || {};
+  const days = place.schedule?.length ? `<br><strong>Jours de présence d'Isabelle :</strong><br>${place.schedule.map(escapeHtml).join('<br>')}` : '';
   return {
-    html: `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;margin:18px 0;font-size:14px;line-height:1.6"><strong>Retrait gratuit en boutique</strong><br>${escapeHtml(place.name || '')}${place.name ? '<br>' : ''}${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}<br><strong>Attendez notre e-mail « commande prête » avant de vous déplacer.</strong></div>`,
-    text: `Retrait gratuit en boutique :\n${[place.name, place.address, place.instructions].filter(Boolean).join('\n')}\nAttendez notre e-mail « commande prête » avant de vous déplacer.`,
+    html: `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;margin:18px 0;font-size:14px;line-height:1.6"><strong>Retrait gratuit en boutique</strong><br>${escapeHtml(place.name || '')}${place.name ? '<br>' : ''}${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${days}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}<br><strong>Attendez notre e-mail « commande prête » avant de vous déplacer.</strong></div>`,
+    text: `Retrait gratuit en boutique :\n${[place.name, place.address, place.schedule?.length ? `Jours de présence d'Isabelle : ${place.schedule.join(', ')}` : '', place.instructions].filter(Boolean).join('\n')}\nAttendez notre e-mail « commande prête » avant de vous déplacer.`,
   };
 }
 
@@ -169,8 +180,8 @@ function buildEmail(kind: EmailKind, order: Order, settings: ShopSettings) {
     return {
       to: order.customer_email, replyTo: settings.notificationEmail,
       subject: `Votre commande ${ref} est prête — L'Atelier d'Isabelle`,
-      html: layout('Votre commande est prête !', `Bonne nouvelle ${escapeHtml(order.customer_first_name)} : votre commande <strong>${escapeHtml(ref)}</strong> vous attend.`, `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.6"><strong>${escapeHtml(place.name || 'Retrait en boutique')}</strong><br>${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}</div><p style="font-size:14px;line-height:1.6;margin-top:16px">Présentez simplement cet e-mail ou votre nom au retrait.</p>`),
-      text: `Votre commande ${ref} est prête.\n${[place.name, place.address, place.instructions].filter(Boolean).join('\n')}\nPrésentez cet e-mail ou votre nom au retrait.`,
+      html: layout('Votre commande est prête !', `Bonne nouvelle ${escapeHtml(order.customer_first_name)} : votre commande <strong>${escapeHtml(ref)}</strong> vous attend.`, `<div style="background:#F6E8D0;border-radius:10px;padding:14px 16px;font-size:14px;line-height:1.6"><strong>${escapeHtml(place.name || 'Retrait en boutique')}</strong><br>${escapeHtml(place.address || '').replace(/\n/g, '<br>')}${place.schedule?.length ? `<br><strong>Venez :</strong> ${place.schedule.map(escapeHtml).join(' · ')}` : ''}${place.instructions ? `<br><span style="color:#7a6a5d">${escapeHtml(place.instructions)}</span>` : ''}</div><p style="font-size:14px;line-height:1.6;margin-top:16px">Présentez simplement cet e-mail ou votre nom au retrait.</p>`),
+      text: `Votre commande ${ref} est prête.\n${[place.name, place.address, place.schedule?.length ? `Venez : ${place.schedule.join(', ')}` : '', place.instructions].filter(Boolean).join('\n')}\nPrésentez cet e-mail ou votre nom au retrait.`,
     };
   }
   const tracking = [order.carrier, order.tracking_number].filter(Boolean).join(' — numéro de suivi : ');

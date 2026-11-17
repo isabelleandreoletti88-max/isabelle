@@ -4,6 +4,7 @@ import { LegalPage, LegalTable, LegalAlert, LegalEmpty } from '@/components/Lega
 import { useLegalSettings } from '@/lib/legalService';
 import { useSiteSettings } from '@/lib/siteData';
 import { formatPrice } from '@/lib/seo';
+import { pickupAvailable, scheduleLines } from '@/lib/pickupSchedule';
 
 type S = Record<string, string>;
 function val(settings: S, key: string): string { return settings[key] || ''; }
@@ -318,7 +319,8 @@ function useSaleInfo() {
     shippingNote: site.shop_shipping_note,
     returnAddress: val(s, 'ecommerce_return_address') || val(s, 'editor_address'),
     homeDelivery: site.shop_home_delivery_enabled !== 'false',
-    pickup: site.shop_pickup_enabled !== 'false' && Boolean(site.shop_pickup_address),
+    pickup: pickupAvailable(site),
+    pickupDays: scheduleLines(site.shop_pickup_schedule),
     pickupName: site.shop_pickup_name,
     pickupAddress: site.shop_pickup_address,
     pickupInstructions: site.shop_pickup_instructions,
@@ -420,7 +422,7 @@ export function ShippingPage() {
     { id: 'modes', title: 'Deux façons de recevoir votre commande', children: (
       <ul className="list-disc pl-5 space-y-2">
         {i.homeDelivery && <li><strong>Livraison à domicile</strong>, en France métropolitaine{i.shippingFee ? ` : ${i.shippingFee} par commande, quel que soit le nombre d’articles` : ''}.</li>}
-        {i.pickup && <li><strong>Retrait gratuit en boutique</strong>{i.pickupName ? ` à ${i.pickupName}` : ''}{i.pickupAddress ? ` (${i.pickupAddress.replace(/\n/g, ', ')})` : ''}. Aucune adresse de livraison n’est demandée ; vous êtes prévenu(e) par e-mail lorsque votre commande est prête.{i.pickupInstructions ? ` ${i.pickupInstructions}` : ''}</li>}
+        {i.pickup && <li><strong>Retrait gratuit en boutique</strong>{i.pickupName ? ` à ${i.pickupName}` : ''}{i.pickupAddress ? ` (${i.pickupAddress.replace(/\n/g, ', ')})` : ''}. Aucune adresse de livraison n’est demandée ; vous êtes prévenu(e) par e-mail lorsque votre commande est prête.{i.pickupDays.length ? ` Jours de présence : ${i.pickupDays.join(', ')}.` : ''}{i.pickupInstructions ? ` ${i.pickupInstructions}` : ''}</li>}
         {!i.homeDelivery && !i.pickup && <li>Les modes de réception sont indiqués dans le panier.</li>}
       </ul>
     )},

@@ -11,6 +11,7 @@ import { useSiteSettings } from '@/lib/siteData';
 import { formatPrice, thumbUrl } from '@/lib/seo';
 import { supabase } from '@/lib/supabase';
 import { useLegalSettings } from '@/lib/legalService';
+import { pickupAvailable, scheduleLines } from '@/lib/pickupSchedule';
 
 type Delivery = 'shipping' | 'pickup';
 type Contact = { first_name: string; last_name: string; email: string; phone: string; note: string };
@@ -39,7 +40,8 @@ export function CartPage() {
 
   const fee = parseFee(settings.shop_shipping_fee) ?? 0;
   const homeEnabled = settings.shop_home_delivery_enabled !== 'false';
-  const pickupEnabled = settings.shop_pickup_enabled !== 'false' && Boolean(settings.shop_pickup_address);
+  const pickupEnabled = pickupAvailable(settings);
+  const pickupDays = scheduleLines(settings.shop_pickup_schedule);
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const chosen: Delivery | null = delivery && ((delivery === 'shipping' && homeEnabled) || (delivery === 'pickup' && pickupEnabled)) ? delivery : homeEnabled ? 'shipping' : pickupEnabled ? 'pickup' : null;
   const [contact, setContact] = useState<Contact>(() => (typeof window === 'undefined' ? emptyContact : readContact()));
@@ -185,7 +187,7 @@ export function CartPage() {
                           <label className={`relative flex cursor-pointer flex-col rounded-soft-lg border-2 p-4 sm:p-5 transition-colors ${chosen === 'pickup' ? 'border-terracotta bg-terracotta/[0.06]' : 'border-wood-deep/12 bg-off-white hover:border-wood-deep/30'}`}>
                             <input type="radio" name="reception" value="pickup" checked={chosen === 'pickup'} onChange={() => setDelivery('pickup')} className="sr-only" />
                             <span className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 font-medium"><Store className="h-5 w-5 text-terracotta" />Retrait gratuit en boutique</span><span className="font-medium text-sage-dark">0 €</span></span>
-                            <span className="mt-2 text-sm text-wood-deep/65 leading-relaxed">Vous serez informé(e) par e-mail lorsque votre commande sera prête.</span>
+                            <span className="mt-2 text-sm text-wood-deep/65 leading-relaxed">{settings.shop_pickup_name ? `${settings.shop_pickup_name}. ` : ''}Vous serez informé(e) par e-mail lorsque votre commande sera prête.</span>
                             {chosen === 'pickup' && <CheckCircle2 className="absolute -top-2.5 -right-2.5 h-6 w-6 rounded-full bg-cream text-terracotta" aria-hidden="true" />}
                           </label>
                         )}
@@ -196,7 +198,8 @@ export function CartPage() {
                           <div>
                             {settings.shop_pickup_name && <p className="font-medium">{settings.shop_pickup_name}</p>}
                             <p className="whitespace-pre-line">{settings.shop_pickup_address}</p>
-                            {settings.shop_pickup_instructions && <p className="mt-1 text-wood-deep/65 whitespace-pre-line">{settings.shop_pickup_instructions}</p>}
+                            {pickupDays.length > 0 && <div className="mt-2"><p className="font-medium">Jours de présence d’Isabelle</p><ul className="mt-0.5">{pickupDays.map((line) => <li key={line}>{line}</li>)}</ul></div>}
+                            {settings.shop_pickup_instructions && <p className="mt-2 text-wood-deep/65 whitespace-pre-line">{settings.shop_pickup_instructions}</p>}
                           </div>
                         </div>
                       )}
@@ -260,7 +263,7 @@ type Summary = {
   order_number: string | null; payment_status: string; delivery_method: Delivery; first_name: string; email: string;
   items: { name: string; slug: string | null; image: string | null; quantity: number; unit_price: number; line_total: number }[];
   subtotal: number; shipping: number; total: number;
-  pickup_location: { name?: string; address?: string; instructions?: string } | null; shipping_city: string | null;
+  pickup_location: { name?: string; address?: string; instructions?: string; schedule?: string[] } | null; shipping_city: string | null;
 };
 
 /** Page de retour après le paiement Stripe. N'affiche que ce que le serveur a vérifié. */
@@ -352,6 +355,7 @@ export function OrderConfirmationPage() {
                     {summary.delivery_method === 'pickup' ? (
                       <div className="mt-4 space-y-3 text-sm leading-relaxed">
                         <p className="flex gap-2"><Store className="h-5 w-5 shrink-0 text-terracotta" /><span><strong className="font-medium">Retrait gratuit en boutique</strong><br />{summary.pickup_location?.name}{summary.pickup_location?.name && <br />}<span className="whitespace-pre-line">{summary.pickup_location?.address}</span></span></p>
+                        {summary.pickup_location?.schedule?.length ? <div><p className="font-medium">Jours de présence d’Isabelle</p><ul>{summary.pickup_location.schedule.map((line) => <li key={line}>{line}</li>)}</ul></div> : null}
                         <p>Isabelle vous enverra un e-mail dès que votre commande sera prête. Attendez ce message avant de vous déplacer.</p>
                       </div>
                     ) : (

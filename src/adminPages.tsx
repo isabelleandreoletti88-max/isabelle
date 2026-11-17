@@ -7,6 +7,7 @@ import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
 import { editablePages } from '@/config/editableContent';
 import { settingsDefaults, type SiteSettings } from '@/lib/siteData';
 import { productImageAlt } from '@/lib/seo';
+import { parseSchedule, type PickupDay } from '@/lib/pickupSchedule';
 import {
   deleteFaq, deleteMaterial, fetchAdminFaqs, fetchAdminMaterials, saveFaq, fetchOrders, fetchSettings, fetchStripeStatus, fetchTexts, resendOrderEmail, resetText, saveMaterial, saveSettings, saveText, updateOrder, uploadImage,
   type FaqRow, type FulfillmentStatus, type GalleryImage, type MaterialRow, type OrderAddress, type OrderRow, type PaymentStatus, type StripeStatus,
@@ -371,11 +372,11 @@ export function ShopSettings() {
 
 // --- Paramètres de livraison ---
 
-const deliveryKeys = ['shop_home_delivery_enabled', 'shop_shipping_fee', 'shop_shipping_note', 'shop_pickup_enabled', 'shop_pickup_name', 'shop_pickup_address', 'shop_pickup_instructions'] as const;
+const deliveryKeys = ['shop_home_delivery_enabled', 'shop_shipping_fee', 'shop_shipping_note', 'shop_pickup_enabled', 'shop_pickup_name', 'shop_pickup_address', 'shop_pickup_instructions', 'shop_pickup_schedule'] as const;
 type DeliveryValues = Record<(typeof deliveryKeys)[number], string>;
 
 export function AdminDelivery() {
-  const [values, setValues] = useState<DeliveryValues>({ shop_home_delivery_enabled: 'true', shop_shipping_fee: '5.90', shop_shipping_note: '', shop_pickup_enabled: 'true', shop_pickup_name: '', shop_pickup_address: '', shop_pickup_instructions: '' });
+  const [values, setValues] = useState<DeliveryValues>({ shop_home_delivery_enabled: 'true', shop_shipping_fee: '5.90', shop_shipping_note: '', shop_pickup_enabled: 'true', shop_pickup_name: '', shop_pickup_address: '', shop_pickup_instructions: '', shop_pickup_schedule: '' });
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -384,7 +385,9 @@ export function AdminDelivery() {
 
   const fee = Number(values.shop_shipping_fee.replace(',', '.'));
   const feeValid = values.shop_shipping_fee.trim() !== '' && Number.isFinite(fee) && fee >= 0 && fee <= 100;
-  const pickupMissing = values.shop_pickup_enabled === 'true' && !values.shop_pickup_address.trim();
+  const pickupMissing = values.shop_pickup_enabled === 'true' && !values.shop_pickup_address.trim() && !values.shop_pickup_name.trim();
+  const days = parseSchedule(values.shop_pickup_schedule);
+  const setDay = (index: number, patch: Partial<PickupDay>) => setValues({ ...values, shop_pickup_schedule: JSON.stringify(days.map((d, i) => (i === index ? { ...d, ...patch } : d))) });
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -418,8 +421,18 @@ export function AdminDelivery() {
         {toggle('shop_pickup_enabled', 'Proposer le retrait gratuit', 'Aucune adresse demandée au client ; il est prévenu par e-mail quand la commande est prête.')}
         <Field label="Nom du lieu de retrait"><input className="input-field" value={values.shop_pickup_name} onChange={(event) => setValues({ ...values, shop_pickup_name: event.target.value })} placeholder="La Boutik’art" /></Field>
         <Field label="Adresse complète"><textarea className="input-field min-h-20" value={values.shop_pickup_address} onChange={(event) => setValues({ ...values, shop_pickup_address: event.target.value })} placeholder={'12 rue …\n88100 Saint-Dié-des-Vosges'} /></Field>
-        <Field label="Indications de retrait (horaires, consignes)"><textarea className="input-field min-h-20" value={values.shop_pickup_instructions} onChange={(event) => setValues({ ...values, shop_pickup_instructions: event.target.value })} /></Field>
-        {pickupMissing && <p className="text-xs text-amber-800 bg-amber-50 rounded-soft p-2">Sans adresse, le retrait n’est pas proposé dans le panier.</p>}
+        <div className="mb-4">
+          <span className="label-field">Jours de présence d’Isabelle</span>
+          <p className="text-xs text-wood-deep/50 mb-2">Cochez les jours où le client peut venir retirer sa commande, et indiquez les horaires.</p>
+          <div className="divide-y divide-wood-deep/10 rounded-soft border border-wood-deep/15 bg-off-white">
+            {days.map((d, i) => <div key={d.day} className="flex items-center gap-3 px-3 py-1.5">
+              <label className="flex w-28 shrink-0 items-center gap-2 text-sm min-h-[40px]"><input type="checkbox" className="accent-terracotta" checked={d.open} onChange={(event) => setDay(i, { open: event.target.checked })} />{d.day}</label>
+              <input className="input-field !min-h-[38px] py-1.5 disabled:opacity-40" disabled={!d.open} value={d.hours} onChange={(event) => setDay(i, { hours: event.target.value })} placeholder={d.open ? 'ex. 14 h – 18 h' : 'Absente'} maxLength={80} aria-label={`Horaires du ${d.day.toLowerCase()}`} />
+            </div>)}
+          </div>
+        </div>
+        <Field label="Autres indications (consignes, fermetures exceptionnelles)"><textarea className="input-field min-h-20" value={values.shop_pickup_instructions} onChange={(event) => setValues({ ...values, shop_pickup_instructions: event.target.value })} /></Field>
+        {pickupMissing && <p className="text-xs text-amber-800 bg-amber-50 rounded-soft p-2">Indiquez au moins le nom du lieu de retrait : sans lui, le retrait n’est pas proposé dans le panier.</p>}
       </Panel>
       <div className="lg:col-span-2"><button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer'}</button></div>
     </form>

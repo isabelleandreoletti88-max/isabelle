@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     customer_email: customer.email,
     customer_phone: customer.phone || null,
     customer_note: note || null,
-    pickup_location: delivery === 'pickup' ? { name: settings.pickupName, address: settings.pickupAddress, instructions: settings.pickupInstructions } : null,
+    pickup_location: delivery === 'pickup' ? { name: settings.pickupName, address: settings.pickupAddress, instructions: settings.pickupInstructions, schedule: settings.pickupSchedule } : null,
     subtotal_amount: subtotalCents / 100,
     shipping_amount: shippingCents / 100,
     total_amount: totalCents / 100,
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
 
   // --- Session Stripe Checkout ---
   const base = returnBase(req);
-  const pickupText = [settings.pickupName, settings.pickupAddress.replace(/\n/g, ', ')].filter(Boolean).join(' — ');
+  const pickupText = [settings.pickupName, settings.pickupAddress.replace(/\n/g, ', '), settings.pickupSchedule.length ? `présente ${settings.pickupSchedule.join(', ')}` : ''].filter(Boolean).join(' — ');
   try {
     const session = await stripe<{ id: string; url: string }>('POST', 'checkout/sessions', {
       mode: 'payment',

@@ -48,6 +48,7 @@ export type SiteSettings = {
   shop_pickup_name: string;
   shop_pickup_address: string;
   shop_pickup_instructions: string;
+  shop_pickup_schedule: string;
   google_review_url: string;
   reviews_enabled: string;
   reviews_min_rating: string;
@@ -72,6 +73,7 @@ export const settingsDefaults: SiteSettings = {
   shop_pickup_name: '',
   shop_pickup_address: '',
   shop_pickup_instructions: '',
+  shop_pickup_schedule: '',
   google_review_url: 'https://g.page/r/CdNCcWkeO6TOEBM/review',
   reviews_enabled: 'true',
   reviews_min_rating: '4',
