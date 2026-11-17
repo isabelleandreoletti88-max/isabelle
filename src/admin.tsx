@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { BarChart3, ChevronRight, HelpCircle, ShoppingBag, Star, Layers, Type, Scale, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar } from 'lucide-react';
+import { BarChart3, ChevronRight, HelpCircle, ShoppingBag, Star, Layers, Type, Scale, FileText, ImagePlus, LayoutDashboard, LogOut, Menu, Package, Pencil, Plus, Settings, Tags, X, Check, Trash2, Inbox, Upload, ExternalLink, Eye, Calendar, Truck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { deleteCategory, deleteSeason, fetchAdminProducts, fetchAdminStats, fetchCategories, fetchSeasons, saveCategory, saveSeason, fetchHeroSlides, saveHeroSlide, deleteHeroSlide, type HeroSlideRow, fetchAdminEvents, saveEvent, deleteEvent, type EventRow } from '@/lib/catalogService';
 import { fetchSiteImages, saveSiteImage, type SiteImageKey } from '@/lib/siteImages';
-import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, syncProductWithStripe, archiveProductInStripe, fetchProductStripeState, type ProductStripeState, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, fetchAdminMaterials, saveMaterial, type MaterialRow, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
+import { deleteMedia, deleteProduct, fetchMedia, fetchProductImages, fetchProductSeasonIds, fetchRequests, recordPreviousSlug, saveProduct, saveProductImages, saveProductSeasons, setProductFlag, updateRequest, uploadImage, fetchAdminMaterials, saveMaterial, type MaterialRow, type GalleryImage, type MediaItem, type ProductInput } from '@/lib/adminService';
 import { ProductGalleryEditor, ShopPanel } from '@/adminPages';
 import { supabase } from '@/lib/supabase';
 import { formatPrice, metaDescription, slugify, thumbUrl } from '@/lib/seo';
@@ -20,6 +20,7 @@ const nav = [
   { path: '/admin', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/admin/demandes', label: 'Demandes', icon: Inbox },
   { path: '/admin/commandes', label: 'Commandes', icon: ShoppingBag },
+  { path: '/admin/livraison', label: 'Paramètres de livraison', icon: Truck },
   { path: '/admin/creations', label: 'Créations', icon: Package },
   { path: '/admin/categories', label: 'Catégories', icon: Tags },
   { path: '/admin/saisons', label: 'Saisons', icon: BarChart3 },
@@ -62,11 +63,10 @@ export function AdminProducts() {
   async function toggle(product: AdminProductRow, flag: 'published' | 'featured') {
     try {
       await setProductFlag(product.id, flag, !product[flag]);
-      if (flag === 'published') void syncProductWithStripe(product.id).catch(() => {});
       setProducts((all) => all.map((p) => p.id === product.id ? { ...p, [flag]: !product[flag] } : p));
     } catch { setError('La modification n’a pas pu être enregistrée.'); }
   }
-  async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await archiveProductInStripe(id).catch(() => {}); await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } }
+  async function remove(id: string) { if (!window.confirm('Supprimer définitivement cette création ?')) return; try { await deleteProduct(id); setProducts((p) => p.filter((x) => x.id !== id)); } catch { setError('La suppression a échoué.'); } }
   const mainImage = (p: AdminProductRow) => [...(p.product_images || [])].sort((a, b) => Number(b.is_main) - Number(a.is_main) || a.display_order - b.display_order)[0];
   return <>
     <AdminTitle title="Créations" description={`${products.length} créations, dont ${products.filter((p) => p.published).length} publiées.`} action={<Link to="/admin/creations/nouvelle" className="btn-primary"><Plus className="h-4 w-4" />Nouvelle création</Link>} />
@@ -118,8 +118,6 @@ export function AdminProductForm() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [shopMessage, setShopMessage] = useState('');
-  const [stripeState, setStripeState] = useState<ProductStripeState | null>(null);
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch(() => setError('Impossible de charger les catégories.'));
@@ -133,7 +131,6 @@ export function AdminProductForm() {
         }
       });
       fetchProductImages(id).then(setImages).catch(() => setError('Impossible de charger les photos.'));
-      fetchProductStripeState(id).then(setStripeState).catch(() => {});
       fetchProductSeasonIds(id).then(setSeasonIds).catch(() => setError('Impossible de charger les saisons de la création.'));
     }
   }, [id]);
@@ -159,17 +156,6 @@ export function AdminProductForm() {
       setImages(await fetchProductImages(product.id));
       setValue((v) => ({ ...v, slug: product.slug }));
       setSaved(true);
-      // Synchronisation Stripe : produit, prix et lien de paiement suivent la fiche.
-      setShopMessage('');
-      if (value.sell_online || stripeState?.stripe_product_id) {
-        try {
-          const result = await syncProductWithStripe(product.id);
-          if (result.reason === 'not_configured') setShopMessage('La boutique en ligne n’est pas encore reliée à Stripe : la création est enregistrée, la vente en ligne sera activée dès la connexion.');
-        } catch (syncError) {
-          setShopMessage(`La création est enregistrée, mais la vente en ligne n’a pas pu être mise à jour : ${(syncError as Error).message}`);
-        }
-        setStripeState(await fetchProductStripeState(product.id));
-      }
       if (!id) navigate(`/admin/creations/${product.id}`);
     } catch {
       setError('La création n’a pas pu être enregistrée.');
@@ -186,7 +172,6 @@ export function AdminProductForm() {
     <AdminTitle title={id ? 'Modifier une création' : 'Nouvelle création'} description="Les informations peuvent être complétées et modifiées à tout moment." action={id && value.published ? <a href={`/creations/${slugPreview}`} target="_blank" rel="noreferrer" className="btn-secondary"><Eye className="h-4 w-4" />Voir sur le site</a> : undefined} />
     {error && <Notice text={error} error />}
     {saved && <Notice text="La création a bien été enregistrée." />}
-    {shopMessage && <Notice text={shopMessage} error />}
     <form onSubmit={submit} className="space-y-6 pb-20">
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -226,7 +211,7 @@ export function AdminProductForm() {
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.price_from} onChange={(e) => update('price_from', e.target.checked)} /> Afficher « À partir de »</label>
             <label className="flex gap-3 items-center text-sm mt-3"><input type="checkbox" className="accent-terracotta" checked={value.personalizable} onChange={(e) => update('personalizable', e.target.checked)} /> Personnalisable</label>
           </Panel>
-          <ShopPanel sellOnline={value.sell_online} onChange={(next) => update('sell_online', next)} state={stripeState} price={value.price} availability={value.availability_status} published={value.published} />
+          <ShopPanel sellOnline={value.sell_online} onChange={(next) => update('sell_online', next)} price={value.price} availability={value.availability_status} published={value.published} stock={value.stock_quantity} onStockChange={(next) => update('stock_quantity', next)} />
           <Panel title="Référencement Google">
             <p className="text-xs text-wood-deep/60 mb-4">Facultatif : laissés vides, le titre et la description sont créés automatiquement.</p>
             <Field label={`Titre (${value.seo_title.length}/60)`}><input className="input-field" placeholder={seoTitle} value={value.seo_title} onChange={(e) => update('seo_title', e.target.value)} /></Field>

@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage, ThankYouPage } from '@/pages';
 import { BoutiquePage } from '@/pages/BoutiquePage';
 import { EventsPage } from '@/pages/EventsPage';
+import { CartPage, OrderConfirmationPage } from '@/pages/CartPage';
 // L'administration et les pages légales sont chargées à la demande : le site public reste léger.
 const legal = () => import('@/legalPages');
 const admin = () => import('@/admin');
@@ -42,6 +43,7 @@ const AdminSettings = lazy(() => adminPages().then((m) => ({ default: m.AdminSet
 const AdminTexts = lazy(() => adminPages().then((m) => ({ default: m.AdminTexts })));
 const AdminMaterials = lazy(() => adminPages().then((m) => ({ default: m.AdminMaterials })));
 const AdminOrders = lazy(() => adminPages().then((m) => ({ default: m.AdminOrders })));
+const AdminDelivery = lazy(() => adminPages().then((m) => ({ default: m.AdminDelivery })));
 const AdminFaqs = lazy(() => adminPages().then((m) => ({ default: m.AdminFaqs })));
 
 function AdminNoIndex() {
@@ -63,7 +65,7 @@ function PageFade({ children }: { children: ReactNode }) {
 function SiteLayout() {
   const { pathname } = useLocation();
   // Masqué sur les pages qui ont déjà un bouton de contact ou d'achat, pour ne pas cacher le contenu.
-  const showContact = !/^\/(creations\/|contact|personnalisation|merci)/.test(pathname);
+  const showContact = !/^\/(creations\/|contact|personnalisation|merci|panier|commande)/.test(pathname);
   return <><ScrollToTop /><Header /><PageFade key={pathname}><Outlet /></PageFade><Footer />{pathname.startsWith('/creations/') && <div className="h-20 lg:hidden bg-wood-darker" aria-hidden="true" />}{showContact && <Link to="/contact" aria-label="Contacter Isabelle" className="lg:hidden fixed right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-terracotta text-off-white shadow-card active:scale-95 transition-transform" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}><MessageCircle className="h-6 w-6" /></Link>}</>;
 }
 
@@ -87,6 +89,7 @@ function App() {
       <Route path="/admin/medias" element={<AdminSimplePage title="Médiathèque" kind="medias" />} />
       <Route path="/admin/demandes" element={<AdminRequests />} />
       <Route path="/admin/commandes" element={<AdminOrders />} />
+      <Route path="/admin/livraison" element={<AdminDelivery />} />
       <Route path="/admin/legal" element={<AdminLegal />} />
       <Route path="/admin/parametres" element={<AdminSettings />} />
     </Route></Route>
@@ -104,7 +107,8 @@ function App() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/merci" element={<ThankYouPage />} />
       <Route path="/favoris" element={<NotFoundPage />} />
-      <Route path="/panier" element={<NotFoundPage />} />
+      <Route path="/panier" element={<CartPage />} />
+      <Route path="/commande/confirmation" element={<OrderConfirmationPage />} />
       <Route path="/informations-legales" element={<LegalHubPage />} />
       <Route path="/mentions-legales" element={<LegalNoticePage />} />
       <Route path="/politique-confidentialite" element={<PrivacyPolicyPage />} />

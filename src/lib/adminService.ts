@@ -253,51 +253,63 @@ export async function resetText(key: string) {
   if (error) throw new Error('Le texte n’a pas pu être réinitialisé.');
 }
 
-// --- Boutique en ligne (Stripe, via la fonction serveur stripe-sync) ---
+// --- Boutique en ligne : état de Stripe (fonction serveur stripe-sync) ---
 
 export type StripeStatus = { configured: boolean; mode?: 'test' | 'live'; account?: string; charges_enabled?: boolean; shop_enabled?: boolean; error?: string };
-export type StripeSyncResult = { sellable?: boolean; url?: string; skipped?: boolean; reason?: string; error?: string; synced?: number; errors?: number };
 
-async function stripeAction<T>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('stripe-sync', { body });
+/** Appelle une fonction serveur et renvoie son message d'erreur s'il y en a un. */
+async function invoke<T>(name: string, body: Record<string, unknown>, fallback: string): Promise<T> {
+  const { data, error } = await supabase.functions.invoke(name, { body });
   if (error) {
-    // Message renvoyé par la fonction (ex. erreur Stripe), sinon message générique.
     const detail = await (error as { context?: Response }).context?.json?.().catch(() => null);
-    throw new Error(detail?.error || 'La boutique en ligne ne répond pas pour le moment.');
+    throw new Error(detail?.error || fallback);
   }
   return data as T;
 }
 
-export const fetchStripeStatus = () => stripeAction<StripeStatus>({ action: 'status' });
-export const syncProductWithStripe = (productId: string) => stripeAction<StripeSyncResult>({ action: 'sync', product_id: productId });
-export const archiveProductInStripe = (productId: string) => stripeAction<StripeSyncResult>({ action: 'archive', product_id: productId });
-export const syncAllWithStripe = () => stripeAction<StripeSyncResult>({ action: 'sync_all' });
-
-export type ProductStripeState = { sell_online: boolean; stripe_payment_link_url: string | null; stripe_synced_at: string | null; stripe_sync_error: string | null; stripe_product_id: string | null };
-
-export async function fetchProductStripeState(productId: string) {
-  const { data } = await supabase.from('products').select('sell_online,stripe_payment_link_url,stripe_synced_at,stripe_sync_error,stripe_product_id').eq('id', productId).maybeSingle();
-  return data as ProductStripeState | null;
-}
+export const fetchStripeStatus = () => invoke<StripeStatus>('stripe-sync', { action: 'status' }, 'La boutique en ligne ne répond pas pour le moment.');
 
 // --- Commandes ---
 
+export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'expired' | 'cancelled' | 'refunded';
+export type FulfillmentStatus = 'to_prepare' | 'ready_for_pickup' | 'shipped' | 'completed' | 'cancelled';
+export type OrderAddress = { line1?: string | null; line2?: string | null; postal_code?: string | null; city?: string | null; country?: string | null };
+export type OrderItemRow = { id: string; product_id: string | null; product_name: string; product_slug: string | null; image_url: string | null; unit_price: number; quantity: number; line_total: number };
 export type OrderRow = {
-  id: string; product_id: string | null; product_name: string; quantity: number; amount_total: number; shipping_amount: number; currency: string;
-  customer_name: string | null; customer_email: string | null; customer_phone: string | null;
-  shipping_address: { line1?: string; line2?: string; postal_code?: string; city?: string; country?: string } | null;
-  status: 'paid' | 'preparing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'; admin_notes: string | null; created_at: string;
+  id: string; order_number: string | null; payment_status: PaymentStatus; fulfillment_status: FulfillmentStatus; delivery_method: 'shipping' | 'pickup';
+  customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null;
+  shipping_name: string | null; shipping_address: OrderAddress | null; pickup_location: { name?: string; address?: string; instructions?: string } | null;
+  subtotal_amount: number; shipping_amount: number; total_amount: number; amount_paid: number | null; currency: string; stripe_mode: string | null;
+  stripe_session_id: string | null; stripe_payment_intent_id: string | null; carrier: string | null; tracking_number: string | null; admin_notes: string | null;
+  alerts: string[]; last_error: string | null; created_at: string; paid_at: string | null; ready_at: string | null; shipped_at: string | null;
+  confirmation_email_sent_at: string | null; admin_email_sent_at: string | null; ready_email_sent_at: string | null; shipped_email_sent_at: string | null;
+  order_items: OrderItemRow[];
 };
 
+const toNumber = (order: OrderRow): OrderRow => ({
+  ...order,
+  subtotal_amount: Number(order.subtotal_amount), shipping_amount: Number(order.shipping_amount), total_amount: Number(order.total_amount),
+  amount_paid: order.amount_paid === null ? null : Number(order.amount_paid),
+  order_items: (order.order_items ?? []).map((item) => ({ ...item, unit_price: Number(item.unit_price), line_total: Number(item.line_total) })),
+});
+
 export async function fetchOrders() {
-  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('orders').select('*, order_items(*)').order('created_at', { ascending: false }).limit(500);
   if (error) throw new Error('Impossible de charger les commandes.');
-  return (data ?? []) as OrderRow[];
+  return ((data ?? []) as OrderRow[]).map(toNumber);
 }
 
-export async function updateOrder(id: string, values: Partial<Pick<OrderRow, 'status' | 'admin_notes'>>) {
-  const { error } = await supabase.from('orders').update(values).eq('id', id);
-  if (error) throw new Error('La commande n’a pas pu être mise à jour.');
+export type OrderUpdate = { fulfillment_status?: FulfillmentStatus; carrier?: string; tracking_number?: string; admin_notes?: string; notify?: boolean };
+export type OrderUpdateResult = { order: OrderRow; email_sent: string | null; email_error: string | null };
+
+export async function updateOrder(id: string, values: OrderUpdate) {
+  const result = await invoke<OrderUpdateResult>('order-update', { action: 'update', order_id: id, ...values }, 'La commande n’a pas pu être mise à jour.');
+  return { ...result, order: toNumber(result.order) };
+}
+
+export async function resendOrderEmail(id: string, kind: 'confirmation' | 'admin' | 'ready' | 'shipped') {
+  const result = await invoke<{ order: OrderRow }>('order-update', { action: 'resend', order_id: id, kind }, 'L’e-mail n’a pas pu être envoyé.');
+  return toNumber(result.order);
 }
 
 // --- Questions fréquentes ---

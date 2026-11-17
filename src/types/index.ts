@@ -51,8 +51,10 @@ export interface Creation {
   seoDescription: string;
   createdAt: string;
   updatedAt: string;
-  /** Lien de paiement Stripe, présent seulement quand la création est en vente en ligne. */
-  buyUrl: string | null;
+  /** Cochée « Vendre en ligne » dans l'administration. */
+  sellOnline: boolean;
+  /** Quantité en stock (null : pièce unique ou fabriquée à la commande). */
+  stock: number | null;
   /** Délai indicatif de réalisation. */
   leadTime: string;
   /** Conseils d'entretien, optionnels. */

@@ -1,7 +1,17 @@
-// Reçoit les paiements Stripe (checkout.session.completed) : enregistre la commande dans
-// l'administration et, pour une pièce unique, la passe en « Vendue » et retire son lien de paiement.
-// Appelée par Stripe : pas de jeton utilisateur, la signature Stripe est vérifiée.
-import { adminClient, getConfig, stripe, stripeKey } from '../_shared/stripe.ts';
+// Reçoit les notifications de Stripe. Seule source qui fait passer une commande à « payée »
+// (avec la vérification directe de checkout-status). La signature Stripe est vérifiée ;
+// chaque événement n'est traité qu'une fois (table stripe_events), et la mise à jour
+// « payée » elle-même est conditionnelle : un événement reçu deux fois ne crée ni doublon
+// ni second e-mail.
+//
+// Événements traités :
+//   checkout.session.completed               paiement immédiat (carte) ou paiement différé lancé
+//   checkout.session.async_payment_succeeded paiement différé confirmé
+//   checkout.session.async_payment_failed    paiement différé refusé
+//   checkout.session.expired                 paiement abandonné (session expirée)
+//   charge.refunded                          remboursement fait depuis Stripe
+import { adminClient, getConfig, stripeMode } from '../_shared/stripe.ts';
+import { markSessionPaid, type CheckoutSession } from '../_shared/shop.ts';
 
 async function hmacHex(secret: string, payload: string) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -19,64 +29,62 @@ function safeEqual(a: string, b: string) {
 async function verify(payload: string, header: string, secret: string) {
   const parts = Object.fromEntries(header.split(',').map((part) => part.split('=') as [string, string]));
   const timestamp = Number(parts.t);
-  if (!timestamp || Math.abs(Date.now() / 1000 - timestamp) > 600) return false;
+  if (!timestamp || Math.abs(Date.now() / 1000 - timestamp) > 300) return false;
   const expected = await hmacHex(secret, `${parts.t}.${payload}`);
   return header.split(',').filter((part) => part.startsWith('v1=')).some((part) => safeEqual(part.slice(3), expected));
 }
 
-type Session = {
-  id: string; payment_status: string; payment_intent: string | null; payment_link: string | null; amount_total: number; currency: string;
-  metadata?: Record<string, string>;
-  customer_details?: { name?: string; email?: string; phone?: string; address?: Record<string, string> };
-  shipping_details?: { name?: string; address?: Record<string, string> };
-  shipping_cost?: { amount_total?: number };
-};
+type Charge = { id: string; payment_intent: string | null; amount: number; amount_refunded: number; refunded: boolean };
+type Event = { id: string; type: string; livemode: boolean; data: { object: CheckoutSession & Charge } };
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Méthode non autorisée', { status: 405 });
   const db = adminClient();
   const payload = await req.text();
-  const mode = stripeKey().startsWith('sk_live') || stripeKey().startsWith('rk_live') ? 'live' : 'test';
-  const secret = await getConfig(db, `webhook_${mode}_secret`);
+  const secret = await getConfig(db, `webhook_${stripeMode()}_secret`);
   if (!secret || !(await verify(payload, req.headers.get('Stripe-Signature') || '', secret))) return new Response('Signature invalide', { status: 400 });
 
-  const event = JSON.parse(payload) as { type: string; data: { object: Session } };
-  if (event.type !== 'checkout.session.completed') return new Response('ignoré', { status: 200 });
-  const session = event.data.object;
-  if (session.payment_status !== 'paid') return new Response('non payé', { status: 200 });
+  const event = JSON.parse(payload) as Event;
+  // Un événement de test ne doit jamais toucher une boutique en mode réel, et inversement.
+  if (event.livemode !== (stripeMode() === 'live')) return new Response('mode différent, ignoré', { status: 200 });
 
-  // Retrouve la création : identifiant copié du lien de paiement, sinon par le lien lui-même.
-  let productId = session.metadata?.supabase_id || null;
-  if (!productId && session.payment_link) {
-    const { data } = await db.from('products').select('id').eq('stripe_payment_link_id', session.payment_link).maybeSingle();
-    productId = data?.id ?? null;
+  const { error: duplicate } = await db.from('stripe_events').insert({ id: event.id, type: event.type });
+  if (duplicate) return new Response(duplicate.code === '23505' ? 'déjà traité' : `Erreur : ${duplicate.message}`, { status: duplicate.code === '23505' ? 200 : 500 });
+
+  try {
+    const object = event.data.object;
+    const orderId = object.metadata?.order_id || object.client_reference_id || null;
+    const updateOrder = (values: Record<string, unknown>) => { const query = db.from('orders').update(values); return orderId ? query.eq('id', orderId) : query.eq('stripe_session_id', object.id); };
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        if (object.payment_status === 'paid' || object.payment_status === 'no_payment_required') await markSessionPaid(db, object);
+        // Paiement différé : la commande attend la confirmation de la banque.
+        else await updateOrder({ payment_status: 'processing', stripe_session_id: object.id, stripe_payment_intent_id: object.payment_intent }).eq('payment_status', 'pending');
+        break;
+      case 'checkout.session.async_payment_succeeded':
+        await markSessionPaid(db, object);
+        break;
+      case 'checkout.session.async_payment_failed':
+        await updateOrder({ payment_status: 'failed', last_error: 'Paiement différé refusé par la banque.' }).in('payment_status', ['pending', 'processing']);
+        break;
+      case 'checkout.session.expired':
+        await updateOrder({ payment_status: 'expired' }).eq('payment_status', 'pending');
+        break;
+      case 'charge.refunded': {
+        if (!object.payment_intent) break;
+        const full = object.refunded || object.amount_refunded >= object.amount;
+        const { data: order } = await db.from('orders').select('id,alerts').eq('stripe_payment_intent_id', object.payment_intent).maybeSingle();
+        if (!order) break;
+        if (full) await db.from('orders').update({ payment_status: 'refunded' }).eq('id', order.id);
+        else await db.from('orders').update({ alerts: [...(order.alerts ?? []), `Remboursement partiel de ${(object.amount_refunded / 100).toFixed(2).replace('.', ',')} € effectué dans Stripe.`] }).eq('id', order.id);
+        break;
+      }
+    }
+    return new Response('ok', { status: 200 });
+  } catch (error) {
+    // Échec : l'événement est retiré pour que Stripe le renvoie plus tard.
+    await db.from('stripe_events').delete().eq('id', event.id);
+    return new Response(`Erreur : ${(error as Error).message}`, { status: 500 });
   }
-  const { data: product } = productId ? await db.from('products').select('id,name,availability_status,stock_quantity').eq('id', productId).maybeSingle() : { data: null };
-
-  const { error } = await db.from('orders').insert({
-    stripe_session_id: session.id,
-    stripe_payment_intent_id: session.payment_intent,
-    product_id: product?.id ?? null,
-    product_name: product?.name ?? 'Création',
-    amount_total: session.amount_total / 100,
-    shipping_amount: (session.shipping_cost?.amount_total ?? 0) / 100,
-    currency: session.currency,
-    customer_name: session.shipping_details?.name || session.customer_details?.name || null,
-    customer_email: session.customer_details?.email || null,
-    customer_phone: session.customer_details?.phone || null,
-    shipping_address: session.shipping_details?.address || session.customer_details?.address || null,
-  });
-  // Stripe peut renvoyer le même événement : la commande n'est enregistrée qu'une fois.
-  if (error && error.code === '23505') return new Response('déjà enregistrée', { status: 200 });
-  if (error) return new Response(`Erreur : ${error.message}`, { status: 500 });
-
-  // Pièce disponible : stock décrémenté ; sans stock suivi, c'est une pièce unique, donc vendue.
-  if (product && product.availability_status === 'available') {
-    const remaining = product.stock_quantity === null ? 0 : Math.max(0, product.stock_quantity - 1);
-    await db.from('products').update({ stock_quantity: product.stock_quantity === null ? null : remaining, ...(remaining === 0 ? { availability_status: 'sold' } : {}) }).eq('id', product.id);
-    if (remaining === 0 && session.payment_link) await stripe('POST', `payment_links/${session.payment_link}`, { active: false }).catch(() => {});
-    if (remaining === 0) await db.from('products').update({ stripe_payment_link_url: null }).eq('id', product.id);
-  }
-
-  return new Response('ok', { status: 200 });
 });

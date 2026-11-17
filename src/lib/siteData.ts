@@ -43,6 +43,11 @@ export type SiteSettings = {
   shop_enabled: string;
   shop_shipping_fee: string;
   shop_shipping_note: string;
+  shop_home_delivery_enabled: string;
+  shop_pickup_enabled: string;
+  shop_pickup_name: string;
+  shop_pickup_address: string;
+  shop_pickup_instructions: string;
   google_review_url: string;
   reviews_enabled: string;
   reviews_min_rating: string;
@@ -62,6 +67,11 @@ export const settingsDefaults: SiteSettings = {
   shop_enabled: 'false',
   shop_shipping_fee: '',
   shop_shipping_note: '',
+  shop_home_delivery_enabled: 'true',
+  shop_pickup_enabled: 'true',
+  shop_pickup_name: '',
+  shop_pickup_address: '',
+  shop_pickup_instructions: '',
   google_review_url: 'https://g.page/r/CdNCcWkeO6TOEBM/review',
   reviews_enabled: 'true',
   reviews_min_rating: '4',

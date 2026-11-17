@@ -1,11 +1,20 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search } from 'lucide-react';
+import { Menu, X, Search, ShoppingBag } from 'lucide-react';
+import { useCart, useShopAccess } from '@/lib/cart';
 import { siteConfig, mainNav } from '@/config/site';
 import { useSiteImages } from '@/lib/siteImages';
 
 export default function Header() {
   const { images } = useSiteImages();
+  const { count } = useCart();
+  const shop = useShopAccess();
+  const cartLink = (shop.visible || count > 0) && (
+    <Link to="/panier" className="relative h-11 w-11 inline-flex items-center justify-center rounded-soft text-wood-deep hover:text-terracotta transition-colors" aria-label={count ? `Panier : ${count} article${count > 1 ? 's' : ''}` : 'Panier'}>
+      <ShoppingBag className="h-5 w-5" />
+      {count > 0 && <span className="absolute right-0.5 top-0.5 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-terracotta text-off-white text-[0.68rem] font-semibold leading-[1.15rem] text-center tabular-nums">{count}</span>}
+    </Link>
+  );
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -76,6 +85,7 @@ export default function Header() {
             <button onClick={() => setSearchOpen((v) => !v)} className="p-2.5 rounded-soft text-wood-deep hover:text-terracotta hover:bg-sand/20 transition-colors" aria-label="Rechercher">
               <Search className="h-5 w-5" />
             </button>
+            {cartLink}
           </div>
 
           {/* Burger mobile */}
@@ -83,6 +93,7 @@ export default function Header() {
             <button onClick={() => setSearchOpen((v) => !v)} className="h-11 w-11 inline-flex items-center justify-center text-wood-deep hover:text-terracotta transition-colors" aria-label="Rechercher">
               <Search className="h-5 w-5" />
             </button>
+            {cartLink}
             <button className="h-11 w-11 -mr-2 inline-flex items-center justify-center text-wood-deep hover:text-terracotta transition-colors" onClick={() => setMobileOpen((v) => !v)} aria-label={mobileOpen ? 'Fermer le menu' : 'Ouvrir le menu'} aria-expanded={mobileOpen} aria-controls="mobile-menu">
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
