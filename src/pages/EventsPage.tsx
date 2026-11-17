@@ -50,7 +50,7 @@ export function EventsPage() {
             subtitle={text('evenements.entete.texte')}
           />
 
-          {loading && <p className="mt-12 text-center text-wood-deep/60">Chargement des événements…</p>}
+          {loading && <p className="mt-12 text-center text-wood-deep/70">Chargement des événements…</p>}
           {error && <p className="mt-12 text-center text-red-700">{error}</p>}
 
           {!loading && !error && permanent.length > 0 && (
@@ -70,7 +70,7 @@ export function EventsPage() {
                       <span className="badge-sage mb-3 inline-block">Boutique partenaire</span>
                       <h3 className="text-xl font-medium">{event.title}</h3>
                       {event.location && (
-                        <p className="mt-2 flex items-center gap-2 text-sm text-wood-deep/60">
+                        <p className="mt-2 flex items-center gap-2 text-sm text-wood-deep/70">
                           <MapPin className="h-4 w-4 text-terracotta" /> {event.location}
                         </p>
                       )}
@@ -110,7 +110,7 @@ export function EventsPage() {
                       <div className="p-6">
                         <h3 className="text-xl font-medium">{event.title}</h3>
                         {event.location && (
-                          <p className="mt-2 flex items-center gap-2 text-sm text-wood-deep/60">
+                          <p className="mt-2 flex items-center gap-2 text-sm text-wood-deep/70">
                             <MapPin className="h-4 w-4 text-terracotta" /> {event.location}
                           </p>
                         )}
@@ -137,7 +137,7 @@ export function EventsPage() {
                 Isabelle participe régulièrement à des marchés de créateurs et des salons artisanaux dans les Vosges.
                 Les dates et lieux des prochaines rencontres seront annoncés ici.
               </p>
-              <p className="mt-4 text-sm text-wood-deep/55">
+              <p className="mt-4 text-sm text-wood-deep/70">
                 Pour ne rien manquer, suivez l'atelier sur{' '}
                 <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
                 {' '}ou{' '}
@@ -153,7 +153,7 @@ export function EventsPage() {
                 Isabelle participe régulièrement à des marchés de créateurs et des salons artisanaux dans les Vosges.
                 Les dates et lieux des prochaines rencontres seront annoncés ici.
               </p>
-              <p className="mt-4 text-sm text-wood-deep/55">
+              <p className="mt-4 text-sm text-wood-deep/70">
                 Pour ne rien manquer, suivez l'atelier sur{' '}
                 <a href={settings.facebook} target="_blank" rel="noreferrer" className="text-terracotta hover:underline">Facebook</a>
                 {' '}ou{' '}

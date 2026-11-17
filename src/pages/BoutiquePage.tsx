@@ -93,7 +93,7 @@ export function BoutiquePage() {
             subtitle={activeCategory?.description || text('boutique.entete.texte')}
           />
           <div className="mt-12">
-            {loading && <p className="mb-6 text-sm text-wood-deep/60">Chargement des créations…</p>}
+            {loading && <p className="mb-6 text-sm text-wood-deep/70">Chargement des créations…</p>}
             {error && <p className="mb-6 text-sm text-red-700">{error}</p>}
             <ProductFilters filters={filters} onChange={setFilters} resultCount={filtered.length} totalCount={creations.length} availableCategorySlugs={availableCategorySlugs} />
             {season && !seasonHasItems && !loading && <p className="mb-6 text-wood-deep/70">Les créations « {season.name} » arrivent bientôt. En attendant, voici toutes les créations de l’atelier.</p>}
@@ -104,7 +104,7 @@ export function BoutiquePage() {
               <div className="text-center py-16 rounded-soft-lg bg-off-white">
                 <Sparkles className="h-10 w-10 text-terracotta mx-auto mb-4" />
                 <h2 className="text-xl sm:text-2xl font-medium">Aucune création ne correspond</h2>
-                <p className="mt-2 text-wood-deep/60">Essayez d'élargir votre recherche ou de réinitialiser les filtres.</p>
+                <p className="mt-2 text-wood-deep/70">Essayez d'élargir votre recherche ou de réinitialiser les filtres.</p>
               </div>
             )}
           </div>

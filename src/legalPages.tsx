@@ -40,7 +40,7 @@ export function LegalHubPage() {
       <LegalPage title="Informations légales" breadcrumb="Informations légales" description="Retrouvez ici tous les documents légaux et d'information du site L'Atelier d'Isabelle." sections={[]} />
       <main className="pb-20">
         <div className="container-page max-w-5xl -mt-8">
-          {loading && <p className="text-sm text-wood-deep/60">Chargement des informations légales…</p>}
+          {loading && <p className="text-sm text-wood-deep/70">Chargement des informations légales…</p>}
           <div className="space-y-12">
             {groups.map((group) => (
               <div key={group.label}>
@@ -50,7 +50,7 @@ export function LegalHubPage() {
                     <Link key={item.to} to={item.to} className="group rounded-soft border border-wood-deep/10 bg-off-white p-5 hover:border-terracotta/40 hover:shadow-soft transition-all">
                       <item.icon className="h-6 w-6 text-terracotta mb-3" />
                       <p className="font-medium group-hover:text-terracotta transition-colors">{item.label}</p>
-                      <p className="text-sm text-wood-deep/60 mt-1">{item.desc}</p>
+                      <p className="text-sm text-wood-deep/70 mt-1">{item.desc}</p>
                     </Link>
                   ))}
                 </div>
@@ -63,7 +63,7 @@ export function LegalHubPage() {
                   <Link key={item.to} to={item.to} className="group rounded-soft border border-wood-deep/10 bg-off-white p-5 hover:border-terracotta/40 hover:shadow-soft transition-all">
                     <item.icon className="h-6 w-6 text-terracotta mb-3" />
                     <p className="font-medium">{item.label}</p>
-                    <p className="text-sm text-wood-deep/60 mt-1">{item.desc}</p>
+                    <p className="text-sm text-wood-deep/70 mt-1">{item.desc}</p>
                   </Link>
                 ))}
               </div>
@@ -508,7 +508,7 @@ export function WithdrawalPage() {
 
 export function WithdrawalFormPage() {
   const i = useSaleInfo();
-  const line = (label: string) => <div><p className="text-sm text-wood-deep/60">{label}</p><div className="border-b border-wood-deep/30 pb-1">&nbsp;</div></div>;
+  const line = (label: string) => <div><p className="text-sm text-wood-deep/70">{label}</p><div className="border-b border-wood-deep/30 pb-1">&nbsp;</div></div>;
   const sections = [
     { id: 'formulaire', title: 'Formulaire type de rétractation', children: (
       <div className="space-y-6">

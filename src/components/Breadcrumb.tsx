@@ -9,7 +9,7 @@ interface BreadcrumbItem {
 export default function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
   return (
     <nav aria-label="Fil d'Ariane" className="mb-6">
-      <ol className="flex flex-wrap items-center gap-1 text-sm text-wood-deep/60">
+      <ol className="flex flex-wrap items-center gap-1 text-sm text-wood-deep/70">
         <li>
           <Link
             to="/"

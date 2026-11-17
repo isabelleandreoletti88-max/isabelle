@@ -93,7 +93,7 @@ function CollectionsRail({ creations }: { creations: Creation[] }) {
                   <span className="absolute right-3 top-3 rounded-pill bg-off-white/95 px-2.5 py-1 text-xs font-medium text-wood-deep tabular-nums shadow-soft">{items.length}</span>
                 </div>
                 <h3 className="mt-4 font-serif text-xl sm:text-2xl leading-snug text-wood-deep group-hover:text-terracotta transition-colors">{cat.name}</h3>
-                <p className="mt-1 text-sm text-wood-deep/60 leading-relaxed line-clamp-2">{cat.description}</p>
+                <p className="mt-1 text-sm text-wood-deep/70 leading-relaxed line-clamp-2">{cat.description}</p>
               </Link>
             </li>
           );
@@ -151,7 +151,7 @@ export function HomePage() {
       <SEO title={siteConfig.defaultSeo.title} description={siteConfig.defaultSeo.description} image={images.og_image} canonicalPath="/" jsonLd={[storeJsonLd(images.og_image), websiteJsonLd(), ...(faqs.length ? [faqJsonLd(faqs)] : [])]} />
       <main>
         <h1 className="sr-only">L’Atelier d’Isabelle — décorations artisanales faites main dans les Vosges : galets, papier, bois et fil de fer</h1>
-        {loading && <div className="container-page pt-8 text-sm text-wood-deep/60">Chargement des créations…</div>}
+        {loading && <div className="container-page pt-8 text-sm text-wood-deep/70">Chargement des créations…</div>}
         {error && <div className="container-page pt-8 text-sm text-red-700">{error}</div>}
         <HeroSlider />
         <Ribbon />

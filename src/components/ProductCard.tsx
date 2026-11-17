@@ -65,7 +65,7 @@ export default function ProductCard({ creation, compact = false }: { creation: C
           </Link>
         </h3>
         {!compact && (
-          <p className="mt-1 hidden sm:block text-sm text-wood-deep/60 leading-relaxed">
+          <p className="mt-1 hidden sm:block text-sm text-wood-deep/70 leading-relaxed">
             <span className="line-clamp-2">{creation.shortDescription}</span>
           </p>
         )}
@@ -73,14 +73,14 @@ export default function ProductCard({ creation, compact = false }: { creation: C
           <span className="text-[0.95rem] sm:text-base font-medium text-wood-deep tabular-nums">
             {creation.price !== null ? (
               <>
-                {creation.priceFrom && <span className="text-xs sm:text-sm font-normal text-wood-deep/55">dès </span>}
+                {creation.priceFrom && <span className="text-xs sm:text-sm font-normal text-wood-deep/70">dès </span>}
                 {formatPrice(creation.price)}
               </>
             ) : (
-              <span className="text-sm font-normal text-wood-deep/55">Prix sur demande</span>
+              <span className="text-sm font-normal text-wood-deep/70">Prix sur demande</span>
             )}
           </span>
-          <span className="hidden sm:inline text-xs text-wood-deep/50 truncate">
+          <span className="hidden sm:inline text-xs text-wood-deep/70 truncate">
             {creation.materials.map((m) => materialLabels[m] || m).join(' · ')}
             {creation.seasons.length > 0 && ` · ${creation.seasons.map((s) => seasonLabels[s]).join(', ')}`}
           </span>

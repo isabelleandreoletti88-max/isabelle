@@ -145,7 +145,7 @@ export function CartPage() {
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <p className="font-serif text-lg sm:text-xl leading-snug">{creation ? <Link to={`/creations/${creation.slug}`} className="hover:text-terracotta">{creation.name}</Link> : loading ? 'Chargement…' : 'Création retirée'}</p>
-                                {creation && <p className="mt-0.5 text-sm text-wood-deep/60 tabular-nums">{formatPrice(creation.price ?? 0)}{max === 1 && creation.availability === 'available' ? ' · pièce unique' : ''}</p>}
+                                {creation && <p className="mt-0.5 text-sm text-wood-deep/70 tabular-nums">{formatPrice(creation.price ?? 0)}{max === 1 && creation.availability === 'available' ? ' · pièce unique' : ''}</p>}
                               </div>
                               <p className="font-medium tabular-nums whitespace-nowrap">{creation && sellable ? formatPrice((creation.price ?? 0) * quantity) : ''}</p>
                             </div>
@@ -157,8 +157,8 @@ export function CartPage() {
                                   <span className="w-7 text-center tabular-nums">{quantity}</span>
                                   <button type="button" className="h-10 w-10 inline-flex items-center justify-center disabled:opacity-30" onClick={() => setQuantity(line.id, quantity + 1)} disabled={quantity >= max} aria-label="Ajouter un exemplaire"><Plus className="h-4 w-4" /></button>
                                 </div>
-                              ) : <span className="text-sm text-wood-deep/55">{sellable ? 'Quantité : 1' : ''}</span>}
-                              <button type="button" onClick={() => remove(line.id)} className="inline-flex items-center gap-1.5 min-h-[40px] text-sm text-wood-deep/60 hover:text-red-700"><Trash2 className="h-4 w-4" />Retirer</button>
+                              ) : <span className="text-sm text-wood-deep/70">{sellable ? 'Quantité : 1' : ''}</span>}
+                              <button type="button" onClick={() => remove(line.id)} className="inline-flex items-center gap-1.5 min-h-[40px] text-sm text-wood-deep/70 hover:text-red-700"><Trash2 className="h-4 w-4" />Retirer</button>
                             </div>
                           </div>
                         </motion.li>
@@ -208,7 +208,7 @@ export function CartPage() {
                     {/* Coordonnées */}
                     <fieldset>
                       <legend className="font-serif text-2xl">Vos coordonnées</legend>
-                      <p className="mt-1 text-sm text-wood-deep/60">{chosen === 'pickup' ? `Pour vous prévenir quand la commande vous attend à ${pickupLabel}.` : 'Pour vous envoyer la confirmation et le suivi de votre colis.'}</p>
+                      <p className="mt-1 text-sm text-wood-deep/70">{chosen === 'pickup' ? `Pour vous prévenir quand la commande vous attend à ${pickupLabel}.` : 'Pour vous envoyer la confirmation et le suivi de votre colis.'}</p>
                       <div className="mt-4 grid sm:grid-cols-2 gap-4">
                         {field('first_name', 'Prénom *', { required: true, autoComplete: 'given-name', maxLength: 60 })}
                         {field('last_name', 'Nom *', { required: true, autoComplete: 'family-name', maxLength: 60 })}
@@ -218,7 +218,7 @@ export function CartPage() {
                       <label className="mt-4 block">
                         <span className="label-field">Précisions pour Isabelle (facultatif)</span>
                         <textarea className="input-field min-h-28" maxLength={1000} value={contact.note} onChange={(e) => setContact({ ...contact, note: e.target.value })} placeholder={personalizable ? 'Prénom à inscrire, date, message, couleurs souhaitées…' : 'Une précision sur votre commande, un message pour un cadeau…'} />
-                        <span className="mt-1 block text-xs text-wood-deep/55">{personalizable ? 'Une ou plusieurs créations sont personnalisables : indiquez ici le prénom, la date ou le message à inscrire. Isabelle vous contactera si besoin avant de réaliser la pièce.' : 'Isabelle lira votre message avec la commande.'}{contact.note.length > 800 ? ` ${1000 - contact.note.length} caractères restants.` : ''}</span>
+                        <span className="mt-1 block text-xs text-wood-deep/70">{personalizable ? 'Une ou plusieurs créations sont personnalisables : indiquez ici le prénom, la date ou le message à inscrire. Isabelle vous contactera si besoin avant de réaliser la pièce.' : 'Isabelle lira votre message avec la commande.'}{contact.note.length > 800 ? ` ${1000 - contact.note.length} caractères restants.` : ''}</span>
                       </label>
                     </fieldset>
                   </>
@@ -234,7 +234,7 @@ export function CartPage() {
                     <div className="flex justify-between gap-4"><dt className="text-wood-deep/70">{chosen === 'pickup' ? 'Retrait gratuit en boutique' : 'Livraison à domicile'}</dt><dd className="tabular-nums">{shipping > 0 ? formatPrice(shipping) : 'Gratuit'}</dd></div>
                     <div className="flex justify-between gap-4 border-t border-wood-deep/15 pt-4 text-lg font-medium"><dt>Total à payer</dt><dd className="tabular-nums">{formatPrice(total)}</dd></div>
                   </dl>
-                  {legal.editor_vat_franchise === 'true' && <p className="mt-2 text-xs text-wood-deep/55">TVA non applicable, article 293 B du CGI.</p>}
+                  {legal.editor_vat_franchise === 'true' && <p className="mt-2 text-xs text-wood-deep/70">TVA non applicable, article 293 B du CGI.</p>}
                   <label className="mt-6 flex gap-3 items-start text-sm leading-relaxed cursor-pointer">
                     <input type="checkbox" className="mt-0.5" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} required />
                     <span>J’ai lu et j’accepte les <Link to="/conditions-generales-de-vente" target="_blank" className="text-terracotta underline">conditions générales de vente</Link> et la <Link to="/livraison" target="_blank" className="text-terracotta underline">politique de livraison</Link>.</span>
@@ -244,7 +244,7 @@ export function CartPage() {
                     <Lock className="h-4 w-4" />{submitting ? 'Ouverture du paiement sécurisé…' : `Payer ${formatPrice(total)}`}
                   </button>
                   {blocked && <p className="mt-2 text-xs text-red-800">Retirez les créations indisponibles pour continuer.</p>}
-                  <ul className="mt-5 space-y-2 text-xs text-wood-deep/60">
+                  <ul className="mt-5 space-y-2 text-xs text-wood-deep/70">
                     <li className="flex gap-2"><Lock className="h-3.5 w-3.5 shrink-0 mt-0.5" />Paiement par carte sur la page sécurisée de Stripe. L’atelier n’a jamais accès à vos données bancaires.</li>
                     <li className="flex gap-2"><Mail className="h-3.5 w-3.5 shrink-0 mt-0.5" />Confirmation envoyée par e-mail dès le paiement validé.</li>
                     <li className="flex gap-2"><Clock className="h-3.5 w-3.5 shrink-0 mt-0.5" />14 jours pour changer d’avis après réception (hors créations personnalisées).</li>

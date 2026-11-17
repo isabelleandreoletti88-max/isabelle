@@ -30,7 +30,7 @@ export function LegalPage({ title, description, breadcrumb, sections, updatedAt,
             {/* Sommaire */}
             <aside className="hidden lg:block">
               <nav className="sticky top-28">
-                <p className="text-xs uppercase tracking-wider text-wood-deep/50 mb-3">Sommaire</p>
+                <p className="text-xs uppercase tracking-wider text-wood-deep/70 mb-3">Sommaire</p>
                 <ul className="space-y-2 text-sm">
                   {sections.map((section) => (
                     <li key={section.id}>
@@ -52,7 +52,7 @@ export function LegalPage({ title, description, breadcrumb, sections, updatedAt,
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                 <div>
                   <h1 className="text-3xl md:text-4xl font-medium">{title}</h1>
-                  {updatedAt && <p className="mt-2 text-sm text-wood-deep/50">Dernière mise à jour : {updatedAt}</p>}
+                  {updatedAt && <p className="mt-2 text-sm text-wood-deep/70">Dernière mise à jour : {updatedAt}</p>}
                 </div>
                 {printable && (
                   <button onClick={() => window.print()} className="lg:hidden flex items-center gap-2 text-sm text-terracotta">
@@ -78,7 +78,7 @@ export function LegalPage({ title, description, breadcrumb, sections, updatedAt,
                 <Link to="/informations-legales" className="flex items-center gap-1.5 text-sm text-terracotta hover:underline">
                   <ChevronRight className="h-4 w-4 rotate-180" /> Retour aux informations légales
                 </Link>
-                <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-1.5 text-sm text-wood-deep/60 hover:text-terracotta">
+                <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-1.5 text-sm text-wood-deep/70 hover:text-terracotta">
                   <ArrowUp className="h-4 w-4" /> Haut de page
                 </button>
               </div>
@@ -123,8 +123,8 @@ export function LegalEmpty({ label }: { label: string }) {
 
 export function FormPrivacyNotice({ kind = 'contact' }: { kind?: 'contact' | 'custom' }) {
   return (
-    <p className="text-xs text-wood-deep/60 leading-relaxed bg-beige/20 rounded-soft p-3">
-      Les informations saisies sont traitées par L’Atelier d’Isabelle pour répondre à votre {kind === 'custom' ? 'demande de création personnalisée' : 'message'} et, si nécessaire, préparer un échange précontractuel. Les champs indiqués d’un astérisque sont nécessaires. Les données sont destinées à l’atelier et à ses prestataires techniques autorisés, selon les modalités décrites dans la <Link to="/politique-confidentialite" className="text-terracotta hover:underline">politique de confidentialité</Link>. Vous pouvez exercer vos droits à l’adresse indiquée dans les mentions légales.
+    <p className="text-xs text-wood-deep/70 leading-relaxed bg-beige/20 rounded-soft p-3">
+      Les informations saisies sont traitées par L’Atelier d’Isabelle pour répondre à votre {kind === 'custom' ? 'demande de création personnalisée' : 'message'} et, si nécessaire, préparer un échange précontractuel. Les champs indiqués d’un astérisque sont nécessaires. Les données sont destinées à l’atelier et à ses prestataires techniques autorisés, selon les modalités décrites dans la <Link to="/politique-confidentialite" className="text-terracotta underline underline-offset-2">politique de confidentialité</Link>. Vous pouvez exercer vos droits à l’adresse indiquée dans les mentions légales.
     </p>
   );
 }

@@ -64,7 +64,7 @@ export default function BuyBox({ creation }: { creation: Creation }) {
       </AnimatePresence>
       <ul className="mt-4 space-y-1.5 text-sm text-wood-deep/70">
         {home && <li className="flex gap-2"><Truck className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" />Livraison à domicile en France métropolitaine{fee !== null ? ` : ${fee > 0 ? formatPrice(fee) : 'offerte'} par commande` : ''}</li>}
-        {pickup && <li className="flex gap-2"><Store className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" /><span>Retrait gratuit en boutique{settings.shop_pickup_name ? ` — ${settings.shop_pickup_name}` : ''}{pickupDays.length ? <span className="block text-wood-deep/55">{pickupDays.join(' · ')}</span> : null}</span></li>}
+        {pickup && <li className="flex gap-2"><Store className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" /><span>Retrait gratuit en boutique{settings.shop_pickup_name ? ` — ${settings.shop_pickup_name}` : ''}{pickupDays.length ? <span className="block text-wood-deep/70">{pickupDays.join(' · ')}</span> : null}</span></li>}
         <li className="flex gap-2"><Lock className="h-4 w-4 shrink-0 mt-0.5 text-terracotta" /><span>Paiement sécurisé par Stripe. 14 jours pour changer d’avis, selon nos <Link to="/conditions-generales-de-vente" className="underline hover:text-terracotta">conditions de vente</Link>.</span></li>
       </ul>
     </div>

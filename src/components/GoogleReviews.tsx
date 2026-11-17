@@ -42,7 +42,7 @@ function ReviewCard({ review }: { review: GoogleReview }) {
         <GoogleMark />
       </div>
       <blockquote className="mt-4 flex-1 text-[0.95rem] leading-relaxed text-wood-deep/80">
-        <p className={`whitespace-pre-line ${!open && long ? 'line-clamp-6' : ''}`}>{review.text || <span className="italic text-wood-deep/50">Note sans commentaire.</span>}</p>
+        <p className={`whitespace-pre-line ${!open && long ? 'line-clamp-6' : ''}`}>{review.text || <span className="italic text-wood-deep/70">Note sans commentaire.</span>}</p>
         {long && <button type="button" className="mt-2 min-h-[40px] text-sm font-medium text-terracotta underline underline-offset-4" onClick={() => setOpen((v) => !v)} aria-expanded={open}>{open ? 'Réduire' : 'Lire la suite'}</button>}
       </blockquote>
       <figcaption className="mt-5 flex items-center gap-3 border-t border-wood-deep/10 pt-4">
@@ -51,7 +51,7 @@ function ReviewCard({ review }: { review: GoogleReview }) {
           : <span className="h-10 w-10 rounded-full bg-sand-light inline-flex items-center justify-center font-serif text-lg text-wood" aria-hidden="true">{review.author.charAt(0)}</span>}
         <span className="min-w-0 text-sm">
           {review.author_uri ? <a href={review.author_uri} target="_blank" rel="noopener noreferrer" className="block truncate font-medium text-wood-deep hover:text-terracotta">{review.author}</a> : <span className="block truncate font-medium">{review.author}</span>}
-          <span className="text-wood-deep/55">{review.relative_time}</span>
+          <span className="text-wood-deep/70">{review.relative_time}</span>
         </span>
       </figcaption>
     </figure>
@@ -92,7 +92,7 @@ export default function GoogleReviews() {
             {reviewUrl && reviews.length > 0 && <a href={reviewUrl} target="_blank" rel="noopener noreferrer" className="btn-primary px-6 py-3.5"><PenLine className="h-4 w-4" />Donner mon avis</a>}
             {data.maps_uri && reviews.length > 0 && <a href={data.maps_uri} target="_blank" rel="noopener noreferrer" className="btn-secondary px-6 py-3.5">Voir tous les avis <ArrowUpRight className="h-4 w-4" /></a>}
           </div>
-          {reviewUrl && reviews.length > 0 && <p className="mt-3 text-xs text-wood-deep/50">Ouvre Google dans un nouvel onglet ; un compte Google est nécessaire pour publier un avis.</p>}
+          {reviewUrl && reviews.length > 0 && <p className="mt-3 text-xs text-wood-deep/70">Ouvre Google dans un nouvel onglet ; un compte Google est nécessaire pour publier un avis.</p>}
         </div>
 
         <div className="lg:col-span-8">
@@ -105,7 +105,7 @@ export default function GoogleReviews() {
               <Stars value={5} className="h-7 w-7" />
               <p className="mt-5 font-serif text-2xl sm:text-3xl text-wood-deep">Votre avis compte beaucoup pour l’atelier</p>
               <p className="mx-auto mt-3 max-w-md text-wood-deep/65 leading-relaxed">Une création vous a touché ? Racontez-le en quelques mots sur Google : c’est le plus beau des encouragements pour Isabelle.</p>
-              {reviewUrl && <><a href={reviewUrl} target="_blank" rel="noopener noreferrer" className="btn-primary mt-7 px-6 py-3.5"><GoogleMark className="h-4 w-4 rounded-full bg-off-white p-[1px]" />Laisser un avis sur Google</a><p className="mt-3 text-xs text-wood-deep/50">S’ouvre dans un nouvel onglet ; un compte Google est nécessaire.</p></>}
+              {reviewUrl && <><a href={reviewUrl} target="_blank" rel="noopener noreferrer" className="btn-primary mt-7 px-6 py-3.5"><GoogleMark className="h-4 w-4 rounded-full bg-off-white p-[1px]" />Laisser un avis sur Google</a><p className="mt-3 text-xs text-wood-deep/70">S’ouvre dans un nouvel onglet ; un compte Google est nécessaire.</p></>}
             </Appear>
           )}
         </div>

@@ -143,7 +143,7 @@ export default function ContactForm({ prefilledSubject = '', compact = false }: 
       <button type="submit" disabled={status === 'submitting'} className="btn-primary w-full sm:w-auto">
         {status === 'submitting' ? <><Loader2 className="h-4 w-4 animate-spin" /> Envoi en cours…</> : <><Send className="h-4 w-4" /> Envoyer mon message</>}
       </button>
-      <p className="text-xs text-wood-deep/50">Les champs marqués d’un * sont obligatoires.</p>
+      <p className="text-xs text-wood-deep/70">Les champs marqués d’un * sont obligatoires.</p>
     </form>
   );
 }
@@ -151,7 +151,7 @@ export default function ContactForm({ prefilledSubject = '', compact = false }: 
 function Field({ label, id, required, hint, error, children }: { label: string; id: string; required?: boolean; hint?: string; error?: string; children: ReactNode }) {
   return (
     <div>
-      <label htmlFor={id} className="label-field">{label} {required && <span className="text-terracotta">*</span>} {hint && <span className="text-xs font-normal text-wood-deep/50">({hint})</span>}</label>
+      <label htmlFor={id} className="label-field">{label} {required && <span className="text-terracotta">*</span>} {hint && <span className="text-xs font-normal text-wood-deep/70">({hint})</span>}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
     </div>

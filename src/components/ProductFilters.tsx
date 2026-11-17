@@ -121,7 +121,7 @@ export default function ProductFilters({
 
       {/* Compteur + reset */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-wood-deep/60" aria-live="polite">
+        <p className="text-sm text-wood-deep/70" aria-live="polite">
           {resultCount} création{resultCount > 1 ? 's' : ''} sur {totalCount}
         </p>
         {hasActiveFilters && (
