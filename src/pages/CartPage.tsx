@@ -13,9 +13,9 @@ import { supabase } from '@/lib/supabase';
 import { useLegalSettings } from '@/lib/legalService';
 
 type Delivery = 'shipping' | 'pickup';
-type Contact = { first_name: string; last_name: string; email: string; phone: string };
+type Contact = { first_name: string; last_name: string; email: string; phone: string; note: string };
 const CONTACT_KEY = 'atelier-coordonnees';
-const emptyContact: Contact = { first_name: '', last_name: '', email: '', phone: '' };
+const emptyContact: Contact = { first_name: '', last_name: '', email: '', phone: '', note: '' };
 
 /** Message d'erreur renvoyé par une fonction serveur, sinon message générique. */
 async function functionError(error: unknown, fallback: string) {
@@ -74,6 +74,7 @@ export function CartPage() {
   const shipping = chosen === 'shipping' ? fee : 0;
   const total = subtotal + shipping;
   const pickupLabel = settings.shop_pickup_name || 'la boutique';
+  const personalizable = valid.some((row) => row.creation?.customizable);
 
   async function pay(event: FormEvent) {
     event.preventDefault();
@@ -82,7 +83,7 @@ export function CartPage() {
     setSubmitting(true); setError('');
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('checkout-create', {
-        body: { items: valid.map((row) => ({ product_id: row.line.id, quantity: row.quantity })), delivery: chosen, customer: contact, accept_terms: true, previous_token: pendingToken },
+        body: { items: valid.map((row) => ({ product_id: row.line.id, quantity: row.quantity })), delivery: chosen, customer: { first_name: contact.first_name, last_name: contact.last_name, email: contact.email, phone: contact.phone }, note: contact.note, accept_terms: true, previous_token: pendingToken },
       });
       if (invokeError) throw new Error(await functionError(invokeError, 'Le paiement n’a pas pu être ouvert. Réessayez dans un instant.'));
       if (!data?.url) throw new Error('Le paiement n’a pas pu être ouvert. Réessayez dans un instant.');
@@ -211,6 +212,11 @@ export function CartPage() {
                         {field('email', 'E-mail *', { required: true, type: 'email', autoComplete: 'email', inputMode: 'email', maxLength: 120 })}
                         {field('phone', chosen === 'pickup' ? 'Téléphone *' : 'Téléphone (facultatif)', { required: chosen === 'pickup', type: 'tel', autoComplete: 'tel', inputMode: 'tel', maxLength: 25 })}
                       </div>
+                      <label className="mt-4 block">
+                        <span className="label-field">Précisions pour Isabelle (facultatif)</span>
+                        <textarea className="input-field min-h-28" maxLength={1000} value={contact.note} onChange={(e) => setContact({ ...contact, note: e.target.value })} placeholder={personalizable ? 'Prénom à inscrire, date, message, couleurs souhaitées…' : 'Une précision sur votre commande, un message pour un cadeau…'} />
+                        <span className="mt-1 block text-xs text-wood-deep/55">{personalizable ? 'Une ou plusieurs créations sont personnalisables : indiquez ici le prénom, la date ou le message à inscrire. Isabelle vous contactera si besoin avant de réaliser la pièce.' : 'Isabelle lira votre message avec la commande.'}{contact.note.length > 800 ? ` ${1000 - contact.note.length} caractères restants.` : ''}</span>
+                      </label>
                     </fieldset>
                   </>
                 )}

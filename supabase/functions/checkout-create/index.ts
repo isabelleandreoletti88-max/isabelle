@@ -12,6 +12,7 @@ type Body = {
   customer?: { first_name?: string; last_name?: string; email?: string; phone?: string };
   accept_terms?: boolean;
   previous_token?: string;
+  note?: string;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -55,6 +56,8 @@ Deno.serve(async (req) => {
   };
   if (!customer.first_name || !customer.last_name) return json({ error: 'Indiquez votre prénom et votre nom.' }, 400);
   if (!EMAIL.test(customer.email)) return json({ error: 'Votre adresse e-mail semble incomplète.' }, 400);
+  // Précisions libres pour Isabelle (personnalisation) : sauts de ligne conservés, 1000 caractères au plus.
+  const note = String(body.note ?? '').replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 1000);
   const phoneDigits = customer.phone.replace(/\D/g, '');
   if (delivery === 'pickup' && phoneDigits.length < 9) return json({ error: 'Indiquez un numéro de téléphone pour être prévenu(e) du retrait.' }, 400);
   if (customer.phone && (phoneDigits.length < 9 || phoneDigits.length > 15)) return json({ error: 'Le numéro de téléphone semble incorrect.' }, 400);
@@ -127,6 +130,7 @@ Deno.serve(async (req) => {
     customer_last_name: customer.last_name,
     customer_email: customer.email,
     customer_phone: customer.phone || null,
+    customer_note: note || null,
     pickup_location: delivery === 'pickup' ? { name: settings.pickupName, address: settings.pickupAddress, instructions: settings.pickupInstructions } : null,
     subtotal_amount: subtotalCents / 100,
     shipping_amount: shippingCents / 100,

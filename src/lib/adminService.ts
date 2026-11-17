@@ -277,7 +277,7 @@ export type OrderAddress = { line1?: string | null; line2?: string | null; posta
 export type OrderItemRow = { id: string; product_id: string | null; product_name: string; product_slug: string | null; image_url: string | null; unit_price: number; quantity: number; line_total: number };
 export type OrderRow = {
   id: string; order_number: string | null; payment_status: PaymentStatus; fulfillment_status: FulfillmentStatus; delivery_method: 'shipping' | 'pickup';
-  customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null;
+  customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null; customer_note: string | null;
   shipping_name: string | null; shipping_address: OrderAddress | null; pickup_location: { name?: string; address?: string; instructions?: string } | null;
   subtotal_amount: number; shipping_amount: number; total_amount: number; amount_paid: number | null; currency: string; stripe_mode: string | null;
   stripe_session_id: string | null; stripe_payment_intent_id: string | null; carrier: string | null; tracking_number: string | null; admin_notes: string | null;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, CreditCard, ImagePlus, Mail, Phone, Plus, Printer, RotateCcw, Star, Store, Trash2, Truck, X } from 'lucide-react';
+import { AlertTriangle, PenLine, ArrowLeft, ArrowRight, Check, CreditCard, ImagePlus, Mail, Phone, Plus, Printer, RotateCcw, Star, Store, Trash2, Truck, X } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
 import { supabase } from '@/lib/supabase';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
@@ -559,6 +559,7 @@ export function AdminOrders() {
           <div className="min-w-0">
             <p className="font-medium">{order.order_number || <span className="text-wood-deep/50">Sans numéro</span>} · {order.customer_first_name} {order.customer_last_name}</p>
             <p className="text-xs text-wood-deep/55 mt-0.5 truncate">{order.order_items.map((item) => `${item.product_name}${item.quantity > 1 ? ` ×${item.quantity}` : ''}`).join(', ')}</p>
+            {order.customer_note && <p className="text-xs text-terracotta-dark mt-0.5 truncate flex items-center gap-1"><PenLine className="h-3 w-3 shrink-0" />{order.customer_note}</p>}
             <p className="text-xs text-wood-deep/50 mt-1 inline-flex items-center gap-1.5">{order.delivery_method === 'pickup' ? <Store className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}{order.delivery_method === 'pickup' ? 'Retrait en boutique' : 'Livraison à domicile'} · {dateTime(order.paid_at || order.created_at)}{order.stripe_mode === 'test' ? ' · test' : ''}</p>
           </div>
           <div className="text-right shrink-0 space-y-1">
@@ -581,6 +582,11 @@ export function AdminOrders() {
         <div className="mt-3 flex flex-wrap gap-2"><PaymentBadge status={selected.payment_status} />{selected.payment_status === 'paid' && <span className="badge-terracotta">{fulfillmentLabels[selected.fulfillment_status]}</span>}{selected.stripe_mode === 'test' && <span className="badge bg-honey/20 text-honey-dark">Paiement de test</span>}</div>
 
         {selected.alerts.length > 0 && <div className="mt-4 rounded-soft bg-red-50 p-3 text-sm text-red-900"><p className="font-medium flex items-center gap-1.5"><AlertTriangle className="h-4 w-4" />À vérifier</p><ul className="mt-1 list-disc pl-5 space-y-1">{selected.alerts.map((alert) => <li key={alert}>{alert}</li>)}</ul></div>}
+
+        {selected.customer_note && <section className="mt-5 rounded-soft border-2 border-terracotta/30 bg-terracotta/[0.05] p-4">
+          <h3 className="text-sm font-medium text-terracotta-dark mb-1">Précisions du client</h3>
+          <p className="text-sm whitespace-pre-line">{selected.customer_note}</p>
+        </section>}
 
         <section className="mt-5">
           <h3 className="text-sm font-medium text-wood-deep/60 mb-2">Articles</h3>

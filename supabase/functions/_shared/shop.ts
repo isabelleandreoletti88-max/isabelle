@@ -61,7 +61,7 @@ export type OrderItem = { product_id: string | null; product_name: string; produ
 export type Address = { line1?: string | null; line2?: string | null; postal_code?: string | null; city?: string | null; state?: string | null; country?: string | null };
 export type Order = {
   id: string; order_number: string | null; public_token: string; payment_status: string; fulfillment_status: string; delivery_method: 'shipping' | 'pickup';
-  customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null;
+  customer_first_name: string; customer_last_name: string; customer_email: string; customer_phone: string | null; customer_note: string | null;
   shipping_name: string | null; shipping_address: Address | null; pickup_location: { name?: string; address?: string; instructions?: string } | null;
   subtotal_amount: number; shipping_amount: number; total_amount: number; amount_paid: number | null;
   stripe_session_id: string | null; stripe_payment_intent_id: string | null; carrier: string | null; tracking_number: string | null;
@@ -117,6 +117,14 @@ function itemsText(order: Order) {
   ].join('\n');
 }
 
+function noteBlock(order: Order, title: string) {
+  if (!order.customer_note) return { html: '', text: '' };
+  return {
+    html: `<div style="border:1px solid #eadccb;border-radius:10px;padding:14px 16px;margin:18px 0;font-size:14px;line-height:1.6"><strong>${escapeHtml(title)}</strong><br>${escapeHtml(order.customer_note).replace(/\n/g, '<br>')}</div>`,
+    text: `${title} :\n${order.customer_note}`,
+  };
+}
+
 function receptionBlock(order: Order) {
   if (order.delivery_method === 'shipping') {
     const lines = [order.shipping_name, ...formatAddress(order.shipping_address)].filter(Boolean) as string[];
@@ -142,8 +150,8 @@ function buildEmail(kind: EmailKind, order: Order, settings: ShopSettings) {
     return {
       to: order.customer_email, replyTo: settings.notificationEmail,
       subject: `Merci pour votre commande ${ref} — L'Atelier d'Isabelle`,
-      html: layout(`Merci ${escapeHtml(order.customer_first_name)} !`, `Votre paiement est confirmé. Voici le récapitulatif de votre commande <strong>${escapeHtml(ref)}</strong>.`, itemsTable(order, settings) + reception.html),
-      text: `Merci ${order.customer_first_name} !\nVotre paiement est confirmé. Commande ${ref}.\n\n${itemsText(order)}\n\n${reception.text}\n\nUne question ? Répondez à cet e-mail.\nL'Atelier d'Isabelle — ${SITE_URL}`,
+      html: layout(`Merci ${escapeHtml(order.customer_first_name)} !`, `Votre paiement est confirmé. Voici le récapitulatif de votre commande <strong>${escapeHtml(ref)}</strong>.`, itemsTable(order, settings) + noteBlock(order, 'Vos précisions pour Isabelle').html + reception.html),
+      text: `Merci ${order.customer_first_name} !\nVotre paiement est confirmé. Commande ${ref}.\n\n${itemsText(order)}\n\n${order.customer_note ? `${noteBlock(order, 'Vos précisions pour Isabelle').text}\n\n` : ''}${reception.text}\n\nUne question ? Répondez à cet e-mail.\nL'Atelier d'Isabelle — ${SITE_URL}`,
     };
   }
   if (kind === 'admin') {
@@ -152,8 +160,8 @@ function buildEmail(kind: EmailKind, order: Order, settings: ShopSettings) {
     return {
       to: settings.notificationEmail, replyTo: order.customer_email,
       subject: `Nouvelle commande ${ref} — ${euro(order.amount_paid ?? order.total_amount)} — ${order.delivery_method === 'shipping' ? 'à expédier' : 'retrait en boutique'}`,
-      html: layout('Nouvelle commande payée', `${escapeHtml(contact[0])} vient de payer sa commande <strong>${escapeHtml(ref)}</strong>.`, alerts + itemsTable(order, settings) + reception.html + `<p style="font-size:14px;line-height:1.6">${contact.map(escapeHtml).join('<br>')}</p><p><a href="${SITE_URL}/admin/commandes?commande=${order.id}" style="display:inline-block;background:#C95F3A;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:14px">Ouvrir la commande</a></p>`),
-      text: `Nouvelle commande ${ref}\n${contact.join('\n')}\n\n${order.alerts.length ? `À vérifier : ${order.alerts.join(' ; ')}\n\n` : ''}${itemsText(order)}\n\n${reception.text}\n\n${SITE_URL}/admin/commandes?commande=${order.id}`,
+      html: layout('Nouvelle commande payée', `${escapeHtml(contact[0])} vient de payer sa commande <strong>${escapeHtml(ref)}</strong>.`, alerts + noteBlock(order, 'Précisions du client').html + itemsTable(order, settings) + reception.html + `<p style="font-size:14px;line-height:1.6">${contact.map(escapeHtml).join('<br>')}</p><p><a href="${SITE_URL}/admin/commandes?commande=${order.id}" style="display:inline-block;background:#C95F3A;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-size:14px">Ouvrir la commande</a></p>`),
+      text: `Nouvelle commande ${ref}\n${contact.join('\n')}\n\n${order.alerts.length ? `À vérifier : ${order.alerts.join(' ; ')}\n\n` : ''}${order.customer_note ? `${noteBlock(order, 'Précisions du client').text}\n\n` : ''}${itemsText(order)}\n\n${reception.text}\n\n${SITE_URL}/admin/commandes?commande=${order.id}`,
     };
   }
   if (kind === 'ready') {
