@@ -125,8 +125,10 @@ export async function uploadImage(file: File, bucket: 'product-images' | 'site-i
     if (error) throw error;
     {
       // Miniature 640 px, utilisée pour les cartes et les petits écrans (thumbUrl).
-      const thumb = await toWebp(file, 640);
-      await supabase.storage.from(bucket).upload(`${stem}-640.webp`, thumb, { contentType: 'image/webp', upsert: false, cacheControl: '31536000' });
+      for (const width of [640, 320]) {
+        const thumb = await toWebp(file, width);
+        await supabase.storage.from(bucket).upload(`${stem}-${width}.webp`, thumb, { contentType: 'image/webp', upsert: false, cacheControl: '31536000' });
+      }
     }
   } catch {
     // Navigateur sans conversion WebP : on garde le fichier d'origine.

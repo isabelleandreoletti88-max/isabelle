@@ -55,5 +55,5 @@ export function metaDescription(text: string, max = 158) {
  */
 export function responsiveImage(url: string, sizes: string) {
   const thumb = thumbUrl(url);
-  return thumb === url ? { src: url } : { src: url, srcSet: `${thumb} 640w, ${url} 1600w`, sizes };
+  return thumb === url ? { src: url } : { src: url, srcSet: `${thumb.replace(/-640\.webp$/, '-320.webp')} 320w, ${thumb} 640w, ${url} 1600w`, sizes };
 }

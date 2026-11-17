@@ -30,6 +30,8 @@ export default function ProductCard({ creation, compact = false }: { creation: C
       <div className="relative aspect-square overflow-hidden rounded-soft-lg bg-sand-light shadow-soft transition-shadow duration-500 group-hover:shadow-card-hover">
         <img
           src={thumbUrl(creation.mainImage)}
+          srcSet={thumbUrl(creation.mainImage) !== creation.mainImage ? `${thumbUrl(creation.mainImage).replace(/-640\.webp$/, '-320.webp')} 320w, ${thumbUrl(creation.mainImage)} 640w` : undefined}
+          sizes="(min-width: 1024px) 30vw, 50vw"
           alt={creation.mainImageAlt}
           width={640}
           height={640}

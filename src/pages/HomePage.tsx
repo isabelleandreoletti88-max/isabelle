@@ -45,7 +45,7 @@ function Featured({ creations }: { creations: Creation[] }) {
       <Appear className="col-span-2 lg:col-span-6">
         <article className="group relative">
           <div className="relative overflow-hidden rounded-soft-lg bg-sand-light shadow-card aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5]">
-            <img {...responsiveImage(first.mainImage, '(min-width: 1024px) 45vw, 100vw')} alt={first.mainImageAlt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]" />
+            <img {...responsiveImage(first.mainImage, '(min-width: 1024px) 45vw, 90vw')} alt={first.mainImageAlt} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wood-darker/80 via-wood-darker/35 to-transparent p-5 sm:p-8 pt-24">
               <h3 className="font-serif text-2xl sm:text-4xl text-off-white leading-tight">
                 <Link to={`/creations/${first.slug}`} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-off-white">{first.name}</Link>
@@ -119,7 +119,7 @@ function SeasonsPanels() {
             onFocus={() => setOpen(i)}
             className={`group relative overflow-hidden rounded-soft-lg bg-wood-deep min-h-[13rem] lg:min-h-0 transition-[flex-grow] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${active ? 'lg:grow-[3.2]' : 'lg:grow'} lg:basis-0`}
           >
-            <img {...responsiveImage(seasonImages[season.slug] || season.image, '(min-width: 1024px) 50vw, 100vw')} alt="" loading="lazy" decoding="async" className={`absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${active ? 'lg:scale-100 lg:opacity-100' : 'lg:scale-110 lg:opacity-70'}`} />
+            <img {...responsiveImage(seasonImages[season.slug] || season.image, '(min-width: 1024px) 50vw, 90vw')} alt="" loading="lazy" decoding="async" className={`absolute inset-0 h-full w-full object-cover transition-[transform,opacity] duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${active ? 'lg:scale-100 lg:opacity-100' : 'lg:scale-110 lg:opacity-70'}`} />
             <span className="absolute inset-0 bg-gradient-to-t from-wood-darker/90 via-wood-darker/55 to-wood-darker/15 lg:via-wood-darker/20 lg:to-transparent" aria-hidden="true" />
             <span className="absolute inset-x-0 bottom-0 p-5 sm:p-7 text-off-white">
               <span className="block font-serif text-2xl sm:text-3xl lg:text-[1.7rem] leading-tight">{season.name}</span>
