@@ -3,7 +3,7 @@
 // et les coordonnées : prix, frais de livraison et total sont recalculés ici depuis le catalogue.
 // La commande est enregistrée « en attente » ; seul le webhook Stripe (ou une vérification
 // directe auprès de Stripe) peut la passer « payée ».
-import { SITE_URL, StripeError, adminClient, corsHeaders, isStaff, json, stripe, stripeKey, stripeMode } from '../_shared/stripe.ts';
+import { SITE_URL, StripeError, adminClient, corsHeaders, ensureWebhook, getConfig, isStaff, json, stripe, stripeKey, stripeMode } from '../_shared/stripe.ts';
 import { loadShopSettings } from '../_shared/shop.ts';
 
 type Body = {
@@ -40,6 +40,10 @@ Deno.serve(async (req) => {
   // Boutique fermée : seule l'équipe peut tester, et uniquement avec une clé Stripe de test.
   if (!settings.enabled && !(stripeMode() === 'test' && (await isStaff(db, req)))) return json({ error: 'La boutique en ligne n’est pas encore ouverte.', code: 'shop_closed' }, 403);
   if (!stripeKey()) return json({ error: 'Le paiement en ligne n’est pas encore configuré. Contactez l’atelier pour commander.', code: 'not_configured' }, 503);
+  // Sans point de réception des paiements pour ce mode (clé changée), il est créé avant toute vente.
+  if (!(await getConfig(db, `webhook_${stripeMode()}_id`))) {
+    try { await ensureWebhook(db); } catch { return json({ error: 'Le paiement sécurisé n’est pas disponible pour le moment. Réessayez dans un instant.', code: 'webhook' }, 503); }
+  }
 
   // --- Contrôle des données reçues ---
   const delivery = body.delivery === 'pickup' ? 'pickup' : body.delivery === 'shipping' ? 'shipping' : null;

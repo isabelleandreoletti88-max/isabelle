@@ -78,3 +78,26 @@ export const corsHeaders = {
 export function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
+
+// --- Point de réception des paiements (webhook), créé automatiquement une fois par mode ---
+
+const WEBHOOK_EVENTS = ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.async_payment_failed', 'checkout.session.expired', 'charge.refunded'];
+
+export async function ensureWebhook(db: SupabaseClient) {
+  const key = `webhook_${stripeMode()}`;
+  const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/stripe-webhook`;
+  const existing = await getConfig(db, `${key}_id`);
+  if (existing) {
+    try {
+      const endpoint = await stripe<{ status: string; url: string; enabled_events: string[] }>('GET', `webhook_endpoints/${existing}`);
+      if (endpoint.url === url) {
+        if (endpoint.status !== 'enabled' || WEBHOOK_EVENTS.some((event) => !endpoint.enabled_events.includes(event))) await stripe('POST', `webhook_endpoints/${existing}`, { enabled_events: WEBHOOK_EVENTS, disabled: false });
+        return;
+      }
+    } catch { /* supprimé dans Stripe : recréé ci-dessous */ }
+  }
+  const endpoint = await stripe<{ id: string; secret: string }>('POST', 'webhook_endpoints', { url, enabled_events: WEBHOOK_EVENTS, api_version: STRIPE_VERSION, description: 'atelier-isabelle.fr — commandes' });
+  await setConfig(db, `${key}_id`, endpoint.id);
+  await setConfig(db, `${key}_secret`, endpoint.secret);
+}
+
