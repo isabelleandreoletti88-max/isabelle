@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, PenLine, Sparkles, ArrowLeft, ArrowRight, Check, CreditCard, ImagePlus, Mail, Phone, Plus, Printer, RotateCcw, Star, Store, Trash2, Truck, X } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
-import { FestiveCanvas, effectForDate, festiveLabels, resolveEffect, type FestiveDensity, type FestiveSetting } from '@/components/FestiveLayer';
+import { FESTIVE_CALENDAR, FESTIVE_EFFECTS, FestiveCanvas, effectForDate, festiveLabels, resolveEffect, type FestiveDensity, type FestiveSetting } from '@/components/FestiveLayer';
 import { supabase } from '@/lib/supabase';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
 import { editablePages } from '@/config/editableContent';
@@ -499,7 +499,7 @@ export function ReviewsSettings() {
 
 // --- Mode fête (page Paramètres) ---
 
-const festiveChoices: FestiveSetting[] = ['none', 'auto', 'snow', 'hearts', 'autumn', 'christmas'];
+const festiveChoices: FestiveSetting[] = ['none', 'auto', ...FESTIVE_EFFECTS];
 
 export function FestiveSettings() {
   const [values, setValues] = useState({ festive_effect: 'none', festive_scope: 'home', festive_density: 'normal' });
@@ -520,7 +520,7 @@ export function FestiveSettings() {
 
   return <section className="bg-off-white rounded-soft shadow-soft p-5 sm:p-6 max-w-3xl mt-8">
     <h2 className="text-xl font-medium mb-1 flex items-center gap-2"><Sparkles className="h-5 w-5 text-terracotta" />Mode fête</h2>
-    <p className="text-sm text-wood-deep/70 mb-5">Une animation légère qui tombe sur le site : neige, cœurs de Saint-Valentin, feuilles d’automne ou Noël. Elle ne gêne ni la lecture ni les clics, et ne s’affiche pas chez les personnes qui ont demandé moins d’animations.</p>
+    <p className="text-sm text-wood-deep/70 mb-5">Une animation légère sur le site : neige, Noël, Nouvel An, Saint-Valentin, printemps, Pâques, fête des mères, été, automne, Halloween ou confettis de fête. Elle ne gêne ni la lecture ni les clics, et ne s’affiche pas chez les personnes qui ont demandé moins d’animations.</p>
     {error && <Notice text={error} error />}
     {message && <Notice text={message} />}
     <form onSubmit={save}>
@@ -530,7 +530,7 @@ export function FestiveSettings() {
           <span>{festiveLabels[choice]}{choice === 'auto' && <span className="block text-xs text-wood-deep/60">Aujourd’hui : {autoToday ? festiveLabels[autoToday].toLowerCase() : 'aucune animation'}</span>}</span>
         </label>)}
       </div>
-      {values.festive_effect === 'auto' && <p className="-mt-2 mb-4 text-xs text-wood-deep/60">Calendrier : Noël du 1er décembre au 6 janvier, neige jusqu’à fin janvier, cœurs du 1er au 15 février, feuilles du 22 septembre à fin novembre ; rien le reste de l’année.</p>}
+      {values.festive_effect === 'auto' && <p className="-mt-2 mb-4 text-xs text-wood-deep/60">Calendrier : {FESTIVE_CALENDAR}</p>}
       <div className="grid sm:grid-cols-2 gap-x-4">
         <Field label="Où l’afficher"><select className="input-field" value={values.festive_scope} onChange={(event) => setValues({ ...values, festive_scope: event.target.value })}><option value="home">Page d’accueil uniquement</option><option value="all">Tout le site (sauf panier et paiement)</option></select></Field>
         <Field label="Quantité"><select className="input-field" value={values.festive_density} onChange={(event) => setValues({ ...values, festive_density: event.target.value })}><option value="light">Discrète</option><option value="normal">Normale</option><option value="strong">Abondante</option></select></Field>
