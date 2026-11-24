@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Check, ShoppingBag } from 'lucide-react';
+import { isSellable, maxQuantity, useCart, useShopAccess } from '@/lib/cart';
 import type { Creation } from '@/types';
 import { materialLabels, seasonLabels } from '@/config/catalog';
 import { formatPrice } from '@/lib/seo';
@@ -25,6 +26,8 @@ export default function ProductCard({ creation, compact = false }: { creation: C
   // La seconde photo n'est chargée qu'au premier survol.
   const second = creation.gallery.find((img) => img !== creation.mainImage);
   const [hovered, setHovered] = useState(false);
+  const shop = useShopAccess();
+  const canBuy = shop.visible && isSellable(creation);
   return (
     <article className="group relative flex h-full flex-col" onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}>
       <div className="relative aspect-square overflow-hidden rounded-soft-lg bg-sand-light shadow-soft transition-shadow duration-500 group-hover:shadow-card-hover">
@@ -85,7 +88,35 @@ export default function ProductCard({ creation, compact = false }: { creation: C
             {creation.seasons.length > 0 && ` · ${creation.seasons.map((s) => seasonLabels[s]).join(', ')}`}
           </span>
         </div>
+        {canBuy && <QuickAdd creation={creation} />}
       </div>
     </article>
+  );
+}
+
+/**
+ * Ajout au panier directement depuis la carte (boutique, collections, accueil).
+ * Placé au-dessus du lien qui couvre la carte, pour ne pas ouvrir la fiche.
+ */
+function QuickAdd({ creation }: { creation: Creation }) {
+  const { lines, add } = useCart();
+  const [justAdded, setJustAdded] = useState(false);
+  const max = maxQuantity(creation);
+  const inCart = lines.find((line) => line.id === creation.id)?.quantity ?? 0;
+  const full = inCart >= max;
+  const base = 'relative z-10 mt-3 inline-flex w-full items-center justify-center gap-2 min-h-[44px] rounded-soft px-3 text-sm font-medium transition-colors';
+
+  if (full && !justAdded) {
+    return <Link to="/panier" className={`${base} border border-sage-dark/30 bg-sage/10 text-sage-dark hover:bg-sage/20`}><Check className="h-4 w-4" />Dans le panier</Link>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => { add(creation.id, 1, max); setJustAdded(true); window.setTimeout(() => setJustAdded(false), 2200); }}
+      className={`${base} ${justAdded ? 'bg-sage-dark text-off-white' : 'bg-terracotta text-off-white hover:bg-terracotta-dark'}`}
+      aria-label={`Ajouter « ${creation.name} » au panier`}
+    >
+      {justAdded ? <><Check className="h-4 w-4" />Ajoutée au panier</> : <><ShoppingBag className="h-4 w-4" />Ajouter au panier</>}
+    </button>
   );
 }
