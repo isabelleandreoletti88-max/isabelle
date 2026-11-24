@@ -54,6 +54,9 @@ export type SiteSettings = {
   google_review_url: string;
   reviews_enabled: string;
   reviews_min_rating: string;
+  festive_effect: string;
+  festive_scope: string;
+  festive_density: string;
 };
 
 export const settingsDefaults: SiteSettings = {
@@ -79,6 +82,9 @@ export const settingsDefaults: SiteSettings = {
   google_review_url: 'https://g.page/r/CdNCcWkeO6TOEBM/review',
   reviews_enabled: 'true',
   reviews_min_rating: '4',
+  festive_effect: 'none',
+  festive_scope: 'home',
+  festive_density: 'normal',
 };
 
 export const settingsSource = cached('settings', async () => {

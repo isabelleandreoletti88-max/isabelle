@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, PenLine, ArrowLeft, ArrowRight, Check, CreditCard, ImagePlus, Mail, Phone, Plus, Printer, RotateCcw, Star, Store, Trash2, Truck, X } from 'lucide-react';
+import { AlertTriangle, PenLine, Sparkles, ArrowLeft, ArrowRight, Check, CreditCard, ImagePlus, Mail, Phone, Plus, Printer, RotateCcw, Star, Store, Trash2, Truck, X } from 'lucide-react';
 import ImageUploader from '@/components/ImageUploader';
+import { FestiveCanvas, effectForDate, festiveLabels, resolveEffect, type FestiveDensity, type FestiveSetting } from '@/components/FestiveLayer';
 import { supabase } from '@/lib/supabase';
 import { AdminTitle, Field, Notice, Panel } from '@/components/adminUi';
 import { editablePages } from '@/config/editableContent';
@@ -76,6 +77,7 @@ export function AdminSettings() {
     </form>
     <ShopSettings />
     <ReviewsSettings />
+    <FestiveSettings />
   </>;
 }
 
@@ -491,6 +493,53 @@ export function ReviewsSettings() {
         <button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer les avis'}</button>
         {status?.configured && <button type="button" className="btn-secondary" disabled={busy} onClick={() => { setBusy(true); void load(true).finally(() => setBusy(false)); }}><RotateCcw className="h-4 w-4" />Actualiser maintenant</button>}
       </div>
+    </form>
+  </section>;
+}
+
+// --- Mode fête (page Paramètres) ---
+
+const festiveChoices: FestiveSetting[] = ['none', 'auto', 'snow', 'hearts', 'autumn', 'christmas'];
+
+export function FestiveSettings() {
+  const [values, setValues] = useState({ festive_effect: 'none', festive_scope: 'home', festive_density: 'normal' });
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { fetchSettings(['festive_effect', 'festive_scope', 'festive_density']).then((saved) => setValues((current) => ({ ...current, ...saved }))).catch(() => setError('Impossible de charger le mode fête.')); }, []);
+  const preview = resolveEffect(values.festive_effect);
+  const autoToday = effectForDate();
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true); setError(''); setMessage('');
+    try { await saveSettings(values); setMessage(values.festive_effect === 'none' ? 'Mode fête désactivé.' : 'Mode fête enregistré : il est visible sur le site dès maintenant.'); }
+    catch { setError('Le réglage n’a pas pu être enregistré.'); }
+    finally { setBusy(false); }
+  }
+
+  return <section className="bg-off-white rounded-soft shadow-soft p-5 sm:p-6 max-w-3xl mt-8">
+    <h2 className="text-xl font-medium mb-1 flex items-center gap-2"><Sparkles className="h-5 w-5 text-terracotta" />Mode fête</h2>
+    <p className="text-sm text-wood-deep/70 mb-5">Une animation légère qui tombe sur le site : neige, cœurs de Saint-Valentin, feuilles d’automne ou Noël. Elle ne gêne ni la lecture ni les clics, et ne s’affiche pas chez les personnes qui ont demandé moins d’animations.</p>
+    {error && <Notice text={error} error />}
+    {message && <Notice text={message} />}
+    <form onSubmit={save}>
+      <div className="grid sm:grid-cols-2 gap-2 mb-4" role="radiogroup" aria-label="Animation">
+        {festiveChoices.map((choice) => <label key={choice} className={`flex items-center gap-3 rounded-soft border px-3 min-h-[48px] text-sm cursor-pointer ${values.festive_effect === choice ? 'border-terracotta bg-terracotta/[0.06]' : 'border-wood-deep/15 hover:border-wood-deep/30'}`}>
+          <input type="radio" name="festive" className="accent-terracotta" checked={values.festive_effect === choice} onChange={() => setValues({ ...values, festive_effect: choice })} />
+          <span>{festiveLabels[choice]}{choice === 'auto' && <span className="block text-xs text-wood-deep/60">Aujourd’hui : {autoToday ? festiveLabels[autoToday].toLowerCase() : 'aucune animation'}</span>}</span>
+        </label>)}
+      </div>
+      {values.festive_effect === 'auto' && <p className="-mt-2 mb-4 text-xs text-wood-deep/60">Calendrier : Noël du 1er décembre au 6 janvier, neige jusqu’à fin janvier, cœurs du 1er au 15 février, feuilles du 22 septembre à fin novembre ; rien le reste de l’année.</p>}
+      <div className="grid sm:grid-cols-2 gap-x-4">
+        <Field label="Où l’afficher"><select className="input-field" value={values.festive_scope} onChange={(event) => setValues({ ...values, festive_scope: event.target.value })}><option value="home">Page d’accueil uniquement</option><option value="all">Tout le site (sauf panier et paiement)</option></select></Field>
+        <Field label="Quantité"><select className="input-field" value={values.festive_density} onChange={(event) => setValues({ ...values, festive_density: event.target.value })}><option value="light">Discrète</option><option value="normal">Normale</option><option value="strong">Abondante</option></select></Field>
+      </div>
+      <div className="relative mb-5 h-44 overflow-hidden rounded-soft bg-gradient-to-b from-wood-deep to-wood text-cream">
+        {preview ? <FestiveCanvas key={`${preview}-${values.festive_density}`} effect={preview} density={values.festive_density as FestiveDensity} contained /> : null}
+        <p className="absolute inset-x-0 bottom-3 text-center text-xs text-cream/75">{preview ? `Aperçu : ${festiveLabels[preview].toLowerCase()}` : 'Aperçu : aucune animation'}</p>
+      </div>
+      <button className="btn-primary" disabled={busy}><Check className="h-4 w-4" />{busy ? 'Enregistrement…' : 'Enregistrer le mode fête'}</button>
     </form>
   </section>;
 }

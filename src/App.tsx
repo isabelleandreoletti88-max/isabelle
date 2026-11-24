@@ -6,6 +6,7 @@ import { EASE, isPrerender } from '@/components/motion';
 import SEO from '@/components/SEO';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import FestiveLayer from '@/components/FestiveLayer';
 import { HomePage, CreationDetailPage, PersonalisationPage, AboutPage, ContactPage, NotFoundPage, ThankYouPage } from '@/pages';
 import { BoutiquePage } from '@/pages/BoutiquePage';
 // Pages secondaires chargées à la demande : l'accueil et la boutique restent légers.
@@ -68,7 +69,7 @@ function SiteLayout() {
   const { pathname } = useLocation();
   // Masqué sur les pages qui ont déjà un bouton de contact ou d'achat, pour ne pas cacher le contenu.
   const showContact = !/^\/(creations\/|contact|personnalisation|merci|panier|commande)/.test(pathname);
-  return <><ScrollToTop /><Header /><PageFade key={pathname}><Outlet /></PageFade><Footer />{pathname.startsWith('/creations/') && <div className="h-20 lg:hidden bg-wood-darker" aria-hidden="true" />}{showContact && <Link to="/contact" aria-label="Contacter Isabelle" className="lg:hidden fixed right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-terracotta text-off-white shadow-card active:scale-95 transition-transform" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}><MessageCircle className="h-6 w-6" /></Link>}</>;
+  return <><ScrollToTop /><Header /><FestiveLayer /><PageFade key={pathname}><Outlet /></PageFade><Footer />{pathname.startsWith('/creations/') && <div className="h-20 lg:hidden bg-wood-darker" aria-hidden="true" />}{showContact && <Link to="/contact" aria-label="Contacter Isabelle" className="lg:hidden fixed right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-terracotta text-off-white shadow-card active:scale-95 transition-transform" style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}><MessageCircle className="h-6 w-6" /></Link>}</>;
 }
 
 function App() {
